@@ -20,11 +20,11 @@ import os
 import string
 
 # =====================  CONFIGURACION  =====================
-# Lee la URL segura de Neon configurada en las variables de entorno de Render
+
+import os
+
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
-# Si por alguna razón quieres probar localmente en tu PC, puedes dejar un respaldo,
-# pero en Render leerá automáticamente la base de datos en la nube.
 if not DATABASE_URL:
     DB_CONFIG = {
         "host": "localhost",
@@ -33,6 +33,8 @@ if not DATABASE_URL:
         "password": "12345678",
         "port": "5432",
     }
+else:
+    DB_CONFIG = None
 
 API_KEY_DISPOSITIVO = "cambia-esta-clave"   # clave que usara el equipo (ESP32) para enviar lecturas
 HORAS_SESION = 2
