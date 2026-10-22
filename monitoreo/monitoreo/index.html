@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TocoAprende · Práctica de tococardiografía</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'%3E%3Crect width='36' height='36' rx='10' fill='%23F2A93B'/%3E%3Cpath d='M5 19h6l3-8 5 16 4-12 2 4h6' fill='none' stroke='%230B2B3A' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"/>
+<meta name="theme-color" content="#0B2B3A"/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#F3F7F8;--ink:#0B2B3A;--text:#1F3A47;--muted:#5E7782;--border:#D6E3E7;--primary:#0E7C86;--secondary:#13979F;--accent:#9FD8DC;--soft:#E7F3F4;--sol:#F2A93B;--danger:#C93C3C;--success:#2E7D4F;--ambar:#B7791F}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Nunito Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.5}
+.hidden{display:none!important}
+h1,h2,h3{font-family:'Sora',system-ui,sans-serif;color:var(--ink)}
+h2{font-size:1.3rem;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+h2::before{content:"";width:6px;height:22px;border-radius:3px;background:var(--sol);flex:none}
+h3{font-size:1rem;margin-bottom:8px}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+/* ---------- acceso: pantalla dividida ---------- */
+.auth-overlay{position:fixed;inset:0;display:grid;grid-template-columns:1.05fr 1fr;background:#fff;z-index:1000;overflow:auto}
+.auth-hero{background:linear-gradient(155deg,#0B2B3A 0%,#0E5560 100%);color:#fff;padding:56px 52px;display:flex;flex-direction:column;justify-content:center;gap:22px}
+.auth-hero .logo{width:54px;height:54px}
+.auth-hero h1{color:#fff;font-size:2.4rem;line-height:1.1}
+.auth-hero>p{color:#C9E3E7;max-width:430px}
+.auth-hero ul{list-style:none;display:grid;gap:14px;margin-top:6px;max-width:440px}
+.auth-hero li{display:flex;gap:12px;color:#E6F3F5}
+.auth-hero li span{flex:none;width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,.14);display:grid;place-items:center;font-weight:800;color:var(--sol)}
+.auth-panel{display:flex;padding:32px;background:var(--bg)}
+.auth-box{margin:auto;width:100%;max-width:430px;background:#fff;border:1px solid var(--border);border-radius:14px;padding:30px;box-shadow:0 8px 28px rgba(11,43,58,.08)}
+.auth-box h2{font-size:1.6rem;margin-bottom:4px}.auth-box h2::before{display:none}
+.auth-box>p{color:var(--muted);font-size:.92rem;margin-bottom:20px}
+.auth-box .tabs{display:flex;border-bottom:2px solid var(--border);margin-bottom:22px}
+.auth-box .tab{flex:1;padding:12px;background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-2px;border-radius:0;font:700 .9rem 'Nunito Sans',sans-serif;color:var(--muted);cursor:pointer}
+.auth-box .tab.active{color:var(--primary);border-bottom-color:var(--primary)}
+/* ---------- formularios y botones ---------- */
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:.76rem;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--ink);margin-bottom:5px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 12px;border:1px solid #B9CDD3;border-radius:8px;font:inherit;color:var(--text);background:#fff}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--primary)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.btn{display:inline-block;padding:10px 18px;border:0;background:var(--primary);color:#fff;font:700 .9rem 'Nunito Sans',sans-serif;border-radius:8px;cursor:pointer;transition:.15s}
+.btn:hover{background:var(--secondary)}
+.btn.full{width:100%;margin-top:8px}
+.btn.sec{background:#fff;color:var(--primary);border:1px solid var(--primary)}.btn.sec:hover{background:var(--soft)}
+.btn.sm{padding:6px 12px;font-size:.8rem}
+.btn.del{background:var(--danger)}.btn.del:hover{background:#A82E2E}
+.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.4);color:#fff}.btn.ghost:hover{background:rgba(255,255,255,.12)}
+main .card form>.btn{display:block;width:fit-content;margin-left:auto}
+/* ---------- barra superior ---------- */
+.topbar{background:var(--ink);color:#fff;display:flex;align-items:center;gap:26px;padding:0 28px;height:64px;position:sticky;top:0;z-index:50}
+.brand{display:flex;align-items:center;gap:10px;flex:none}.brand .logo{width:34px;height:34px}
+.brand b{font-family:'Sora',sans-serif;font-size:1.05rem;display:block;line-height:1.1}.brand small{color:#9FC3CA;font-size:.68rem}
+.nav{display:flex;gap:2px;flex:1;height:100%;overflow-x:auto}
+.nav-btn{background:none;border:0;border-bottom:3px solid transparent;color:#B8D3D8;font:700 .88rem 'Nunito Sans',sans-serif;padding:0 16px;cursor:pointer;white-space:nowrap}
+.nav-btn:hover{color:#fff}.nav-btn.active{color:#fff;border-bottom-color:var(--sol)}
+.user{display:flex;align-items:center;gap:12px;font-size:.82rem;color:#CFE5E8;flex:none}
+main{max-width:1120px;margin:0 auto;padding:28px 24px 60px}
+.card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:22px;margin-bottom:18px;box-shadow:0 1px 2px rgba(11,43,58,.05)}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}.top h2{margin:0}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;margin-top:8px}
+th,td{padding:11px 12px;text-align:left;border-bottom:1px solid var(--border);font-size:.88rem;vertical-align:top}
+th{background:var(--soft);color:var(--primary);font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
+tbody tr:hover{background:#F8FBFB}td .btn{margin-right:4px}
+.vacio{color:var(--muted)}
+.cred{border:2px solid var(--primary);background:var(--soft)}.cred p{margin:6px 0}.cred strong{font-family:Consolas,monospace;font-size:1.15rem;color:var(--ink)}
+/* ---------- servicio tecnico ---------- */
+.sensores{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.sensor{border-left:6px solid;border-radius:10px;padding:12px 16px;background:var(--bg)}
+.sensor.ok{border-color:var(--success)}.sensor.warn{border-color:var(--ambar)}.sensor.fail{border-color:var(--danger);background:#FCEEEE}
+.alerta{background:#FCEEEE;border:1px solid #EDB4B4;color:#8A2525;padding:12px 16px;border-radius:10px;font-weight:700;margin-bottom:15px}
+/* ---------- monitor ---------- */
+.papel{background:#FFF8EC;border:1px solid #F1D9B5;border-radius:12px;padding:16px;margin-bottom:16px}
+.papel canvas{width:100%;height:auto;display:block;border:1px solid #F1D9B5;background:linear-gradient(#F3DFC0 1px,transparent 1px) 0 0/100% 20px,linear-gradient(90deg,#F3DFC0 1px,transparent 1px) 0 0/20px 100%,#FFFCF5}
+.lectura{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px;font-weight:700;color:var(--ink)}
+.lectura strong{font:700 2.4rem/1 'Sora',sans-serif;font-variant-numeric:tabular-nums}
+.lectura b{font-size:.78rem;padding:3px 9px;border-radius:5px}.b-ok{background:#DCF0E3;color:var(--success)}.b-mal{background:#FBE2E2;color:#B03030}
+.escala{font-size:.8rem;color:var(--muted);margin-top:6px}
+.sim{display:flex;align-items:center;gap:8px;font-size:.9rem}.sim input{width:auto}
+/* ---------- guia didactica ---------- */
+.tabs{display:flex}
+.gtabs{flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.gtabs .tab{flex:none;padding:8px 14px;border:1px solid var(--border);border-radius:999px;background:#fff;font:700 .84rem 'Nunito Sans',sans-serif;color:var(--muted);cursor:pointer}
+.gtabs .tab:hover{border-color:var(--primary);color:var(--primary)}
+.gtabs .tab.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.gpanel h3{color:var(--primary);margin:6px 0 10px}.gpanel p{margin:8px 0}
+.pasos{list-style:none;counter-reset:p;margin:10px 0}
+.pasos li{counter-increment:p;position:relative;padding:4px 0 14px 46px}
+.pasos li::before{content:counter(p);position:absolute;left:0;top:0;width:30px;height:30px;border-radius:8px;background:var(--ink);color:var(--sol);font-weight:800;display:flex;align-items:center;justify-content:center}
+.pasos b{display:block;color:var(--ink)}
+.callout{border-left:5px solid var(--primary);background:var(--soft);border-radius:8px;padding:10px 14px;margin:12px 0;font-size:.92rem}
+.callout.warn{border-color:var(--sol);background:#FFF6E3}
+.guia-grid{display:grid;grid-template-columns:minmax(260px,340px) 1fr;gap:24px;align-items:start}
+.esquema{width:100%;height:auto;background:#fff;border:1px solid var(--border);border-radius:12px}
+.esquema text{fill:var(--text);font:12px 'Nunito Sans',sans-serif}
+.lado{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.opt{display:block;width:100%;text-align:left;margin:6px 0;padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:#fff;font:.9rem 'Nunito Sans',sans-serif;color:var(--text);cursor:pointer}
+.opt:hover{background:var(--soft)}.opt.ok{background:#DCF0E3;border-color:var(--success)}.opt.mal{background:#FBE2E2;border-color:var(--danger)}
+.expl{font-size:.88rem;color:var(--muted);margin:6px 0 0}
+.preg{border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px}
+.mano{animation:palpar .9s ease-in-out infinite alternate}.mano.r{animation-name:palpar2}
+@keyframes palpar{to{transform:translateX(12px)}}@keyframes palpar2{to{transform:translateX(-12px)}}
+.cint{fill:none;stroke:#5E7782;stroke-width:6;stroke-linecap:round;stroke-dasharray:260;stroke-dashoffset:260;opacity:.55;transition:stroke-dashoffset 1s ease}
+.cint.on{stroke-dashoffset:0}
+.onda{animation:pulso 1s ease-in-out infinite}@keyframes pulso{0%,100%{opacity:.25}50%{opacity:1}}
+.desfile{animation:desfile 3s linear infinite}@keyframes desfile{to{transform:translateX(-160px)}}
+.puntos{display:flex;gap:6px;justify-content:center;margin:12px 0}.punto{width:10px;height:10px;border-radius:50%;background:var(--border)}.punto.on{background:var(--primary)}
+.paso-caja{background:var(--soft);border-radius:10px;padding:12px 16px;min-height:100px}.paso-caja b{color:var(--primary)}
+.s-ok{filter:drop-shadow(0 0 5px #2E7D4F)}.s-mal{filter:drop-shadow(0 0 5px #C93C3C)}
+.msg p{margin:7px 0;font-size:.92rem}
+@media(max-width:860px){.auth-overlay{grid-template-columns:1fr}.auth-hero{padding:28px 24px}.auth-hero h1{font-size:1.8rem}.auth-hero ul{display:none}.auth-panel{padding:16px}
+.topbar{flex-wrap:wrap;height:auto;padding:10px 16px;gap:8px}.nav{order:3;flex-basis:100%;height:44px}.user span{display:none}.guia-grid{grid-template-columns:1fr}.cols{grid-template-columns:1fr}main{padding:18px 14px 50px}}
+</style>
+</head>
+<body>
+
+<!-- ============ ACCESO ============ -->
+<div id="auth" class="auth-overlay hidden">
+  <div class="auth-hero">
+    <svg class="logo" viewBox="0 0 36 36" aria-hidden="true"><rect width="36" height="36" rx="10" fill="#F2A93B"/><path d="M5 19h6l3-8 5 16 4-12 2 4h6" fill="none" stroke="#0B2B3A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <h1>TocoAprende</h1>
+    <p>Plataforma para que estudiantes de medicina aprendan a colocar los sensores del tococardiógrafo y a leer un registro.</p>
+    <ul>
+      <li><span>1</span>Guía paso a paso para colocar el Doppler fetal y el tocodinamómetro</li>
+      <li><span>2</span>Ejercicios interactivos con retroalimentación inmediata</li>
+      <li><span>3</span>Monitor con la frecuencia cardiaca fetal y las contracciones</li>
+    </ul>
+  </div>
+  <div class="auth-panel">
+  <div class="auth-box">
+    <div class="tabs" id="tabs">
+      <button type="button" class="tab active" id="tab-login" onclick="cambiarTab('login')">Iniciar sesión</button>
+      <button type="button" class="tab" id="tab-registro" onclick="cambiarTab('registro')">Crear cuenta</button>
+    </div>
+    <h2 id="auth-title">Bienvenido</h2>
+    <p id="auth-sub">Ingresa tus credenciales para continuar</p>
+
+    <!-- YA TENGO CUENTA -->
+    <form id="form-login" onsubmit="hacerLogin(event)">
+      <div class="form-group"><label>Tipo de cuenta</label>
+        <select id="login-rol"><option value="administrador">Administrador</option><option value="operador">Operador</option><option value="tecnico">Servicio técnico</option></select></div>
+      <div class="form-group"><label>Usuario</label><input id="login-user" required autocomplete="username"></div>
+      <div class="form-group"><label>Contraseña</label><input type="password" id="login-pass" required autocomplete="current-password"></div>
+      <button class="btn full">Ingresar al sistema</button>
+    </form>
+
+    <!-- CREAR CUENTA NUEVA -->
+    <form id="form-registro" class="hidden" onsubmit="crearCuenta(event)">
+      <div class="form-group"><label>Tipo de cuenta</label>
+        <select id="c-rol"><option value="administrador">Administrador</option><option value="tecnico">Servicio técnico</option></select></div>
+      <div class="cols">
+        <div class="form-group"><label>Nombre</label><input id="c-nombre" required></div>
+        <div class="form-group"><label>Apellido</label><input id="c-apellido" required></div>
+      </div>
+      <div class="cols">
+        <div class="form-group"><label>Fecha de nacimiento</label><input type="date" id="c-fnac" required></div>
+        <div class="form-group"><label>Carnet de identidad</label><input id="c-ci" required></div>
+      </div>
+      <div class="form-group"><label>Celular</label><input id="c-cel"></div>
+      <div class="form-group"><label>Usuario</label><input id="c-user" required autocomplete="off"></div>
+      <div class="cols">
+        <div class="form-group"><label>Contraseña</label><input type="password" id="c-pass" required minlength="6" autocomplete="new-password"></div>
+        <div class="form-group"><label>Repetir contraseña</label><input type="password" id="c-pass2" required minlength="6" autocomplete="new-password"></div>
+      </div>
+      <button class="btn full">Crear cuenta</button>
+    </form>
+
+    <!-- PRIMER ADMINISTRADOR (solo aparece si no existe ninguno) -->
+    <form id="form-first" class="hidden" onsubmit="crearPrimerAdmin(event)">
+      <div class="cols">
+        <div class="form-group"><label>Nombre</label><input id="a-nombre" required></div>
+        <div class="form-group"><label>Apellido</label><input id="a-apellido" required></div>
+      </div>
+      <div class="cols">
+        <div class="form-group"><label>Fecha de nacimiento</label><input type="date" id="a-fnac" required></div>
+        <div class="form-group"><label>Carnet de identidad</label><input id="a-ci" required></div>
+      </div>
+      <div class="form-group"><label>Celular</label><input id="a-cel"></div>
+      <div class="cols">
+        <div class="form-group"><label>Usuario</label><input id="a-user" required></div>
+        <div class="form-group"><label>Contraseña</label><input type="password" id="a-pass" required></div>
+      </div>
+      <button class="btn full">Crear administrador principal</button>
+    </form>
+  </div>
+  </div>
+</div>
+
+<!-- ============ APLICACION ============ -->
+<div id="app" class="hidden">
+  <header class="topbar">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 36 36" aria-hidden="true"><rect width="36" height="36" rx="10" fill="#F2A93B"/><path d="M5 19h6l3-8 5 16 4-12 2 4h6" fill="none" stroke="#0B2B3A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div><b>TocoAprende</b><small>Práctica de tococardiografía</small></div>
+    </div>
+    <nav class="nav" id="menu"></nav>
+    <div class="user"><span id="user-tag"></span><button type="button" class="btn sm ghost" onclick="salir()">Cerrar sesión</button></div>
+  </header>
+  <main>
+
+      <!-- ADMIN: operadores -->
+      <section id="sec-ops" class="hidden">
+        <h2>Operadores registrados</h2>
+        <div class="card"><div class="scroll"><table><thead><tr>
+          <th>Nombre</th><th>Carnet</th><th>Celular</th><th>Usuario</th><th>Registrado</th><th>Pacientes</th><th></th></tr></thead>
+          <tbody id="t-ops"></tbody></table></div><p id="v-ops" class="vacio hidden">Aún no hay operadores. Regístralos desde el menú.</p></div>
+        <h2>Administradores</h2>
+        <div class="card"><div class="scroll"><table><thead><tr>
+          <th>Nombre</th><th>Carnet</th><th>Celular</th><th>Usuario</th><th>Registrado</th></tr></thead>
+          <tbody id="t-admins"></tbody></table></div></div>
+      </section>
+
+      <!-- ADMIN: detalle de un operador -->
+      <section id="sec-op-det" class="hidden">
+        <div class="top"><h2 id="det-titulo"></h2><button class="btn sec sm" onclick="irA(0)">← Volver</button></div>
+        <div class="card"><p id="det-datos"></p></div>
+        <div class="card"><h3>Pacientes registradas por este operador</h3>
+          <div class="scroll"><table><thead><tr><th>Nombre</th><th>Carnet</th><th>Edad</th><th>Mes de embarazo</th><th>Celular</th><th>Registrada</th><th></th></tr></thead>
+          <tbody id="t-det"></tbody></table></div><p id="v-det" class="vacio hidden">Este operador todavía no registró pacientes.</p></div>
+      </section>
+
+      <!-- ADMIN: registrar personal -->
+      <section id="sec-personal" class="hidden">
+        <h2 id="per-titulo"></h2>
+        <div id="cred-box" class="card cred hidden">
+          <h3>✅ Cuenta creada</h3>
+          <p>Entrega estos datos. La contraseña <b>no se vuelve a mostrar</b>.</p>
+          <p>Usuario: <strong id="cred-user"></strong></p><p>Contraseña: <strong id="cred-pass"></strong></p>
+        </div>
+        <div class="card" style="max-width:520px">
+          <p class="vacio" style="margin-bottom:14px">El usuario y la contraseña se generan automáticamente al guardar.</p>
+          <form onsubmit="registrarPersonal(event)">
+            <div class="form-group" id="g-tipo"><label>Cargo</label><select id="per-tipo"></select></div>
+            <div class="cols">
+              <div class="form-group"><label>Nombre</label><input id="per-nombre" required></div>
+              <div class="form-group"><label>Apellido</label><input id="per-apellido" required></div>
+            </div>
+            <div class="cols">
+              <div class="form-group"><label>Fecha de nacimiento</label><input type="date" id="per-fnac" required></div>
+              <div class="form-group"><label>Carnet de identidad</label><input id="per-ci" required></div>
+            </div>
+            <div class="form-group"><label>Celular</label><input id="per-cel"></div>
+            <button class="btn">Guardar y generar cuenta</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- OPERADOR: mis pacientes -->
+      <section id="sec-pacs" class="hidden">
+        <h2>Mis pacientes</h2>
+        <div class="card"><div class="scroll"><table><thead><tr>
+          <th>ID</th><th>Nombre</th><th>Carnet</th><th>Edad</th><th>Mes de embarazo</th><th>Celular</th><th></th></tr></thead>
+          <tbody id="t-pacs"></tbody></table></div><p id="v-pacs" class="vacio hidden">Todavía no registraste pacientes. Usa “Registrar paciente”.</p></div>
+      </section>
+
+      <!-- OPERADOR: nueva paciente -->
+      <section id="sec-nueva" class="hidden">
+        <h2>Registrar nueva embarazada</h2>
+        <div class="card" style="max-width:520px">
+          <form onsubmit="registrarPaciente(event)">
+            <div class="cols">
+              <div class="form-group"><label>Nombre</label><input id="p-nombre" required></div>
+              <div class="form-group"><label>Apellido</label><input id="p-apellido" required></div>
+            </div>
+            <div class="cols">
+              <div class="form-group"><label>Fecha de nacimiento</label><input type="date" id="p-fnac" required oninput="calcEdad()"></div>
+              <div class="form-group"><label>Edad</label><input id="p-edad" readonly placeholder="Se calcula sola"></div>
+            </div>
+            <div class="cols">
+              <div class="form-group"><label>Mes de embarazo</label><select id="p-mes"></select></div>
+              <div class="form-group"><label>Carnet de identidad</label><input id="p-ci" required></div>
+            </div>
+            <div class="form-group"><label>Celular</label><input id="p-cel"></div>
+            <button class="btn">Guardar paciente</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- OPERADOR: monitor -->
+      <section id="sec-monitor" class="hidden">
+        <div class="top"><h2 id="mon-titulo"></h2><button class="btn sec sm" onclick="irA(0)">← Volver</button></div>
+        <div class="papel">
+          <div class="lectura"><span>Doppler fetal (FCF)</span><strong id="v-fcf">--</strong><span>lpm</span><b id="e-fcf"></b></div>
+          <canvas id="c-fcf" width="900" height="240"></canvas>
+          <p class="escala">Zona verde: 110 a 160 latidos por minuto (rango normal).</p>
+        </div>
+        <div class="papel">
+          <div class="lectura"><span>Tocodinamómetro (contracciones)</span><strong id="v-toco">--</strong></div>
+          <canvas id="c-toco" width="900" height="180"></canvas>
+          <p class="escala">Presión uterina relativa, escala de 0 a 100.</p>
+        </div>
+        <label class="sim"><input type="checkbox" id="sim"> Generar lecturas de práctica (sin equipo conectado)</label>
+        <p class="escala" style="margin-top:10px">¿Dudas sobre cómo colocar los sensores o leer el trazado? <a href="#" onclick="irA(2);return false" style="color:var(--primary);font-weight:600">Abrir la guía didáctica</a></p>
+      </section>
+
+      <!-- OPERADOR: guia didactica -->
+      <section id="sec-guia" class="hidden">
+        <h2>Guía didáctica del tococardiógrafo</h2>
+        <div class="callout warn">Material de estudio para practicar. No reemplaza las indicaciones de tu docente ni los protocolos de tu institución.</div>
+        <div class="tabs gtabs">
+          <button type="button" class="tab active" data-p="g-antes" onclick="guiaTab('g-antes')">1. Antes de empezar</button>
+          <button type="button" class="tab" data-p="g-doppler" onclick="guiaTab('g-doppler')">2. Doppler fetal</button>
+          <button type="button" class="tab" data-p="g-toco" onclick="guiaTab('g-toco')">3. Tocodinamómetro</button>
+          <button type="button" class="tab" data-p="g-anim" onclick="guiaTab('g-anim')">🎬 4. Verlo en movimiento</button>
+          <button type="button" class="tab" data-p="g-prac" onclick="guiaTab('g-prac')">🎯 5. Practica tú</button>
+          <button type="button" class="tab" data-p="g-leer" onclick="guiaTab('g-leer')">6. Leer el trazado</button>
+          <button type="button" class="tab" data-p="g-prob" onclick="guiaTab('g-prob')">7. Problemas frecuentes</button>
+          <button type="button" class="tab" data-p="g-quiz" onclick="guiaTab('g-quiz')">8. Autoevaluación</button>
+        </div>
+
+        <div class="card gpanel" id="g-antes">
+          <h3>¿Qué hace este equipo?</h3>
+          <p>El monitoreo fetal externo usa <b>dos sensores</b>: el <b>transductor Doppler (ultrasonido)</b> registra la frecuencia cardiaca fetal (FCF) y el <b>tocodinamómetro</b> registra las contracciones uterinas. Ambos se sujetan con cinturones sobre el abdomen y se grafican juntos en el tiempo.</p>
+          <h3>Preparación</h3>
+          <ol class="pasos">
+            <li><b>Prepara a la paciente</b>Explica el procedimiento y pide su consentimiento. Colócala <b>semisentada o de lado</b>; evita que esté boca arriba y plana, porque el peso del útero puede comprimir vasos grandes y bajar su presión.</li>
+            <li><b>Revisa el equipo</b>Monitor encendido, cinturones, gel de ultrasonido y sensores limpios y sin cables dañados.</li>
+            <li><b>Palpa el abdomen (maniobras de Leopold)</b>Ubica el fondo uterino y la espalda del feto. Esto decide dónde va cada sensor.</li>
+            <li><b>Registra a la paciente</b>Verifica sus datos y el mes de embarazo antes de iniciar.</li>
+          </ol>
+        </div>
+
+        <div class="card gpanel hidden" id="g-doppler">
+          <h3>Cómo colocar el Doppler fetal</h3>
+              <ol class="pasos">
+                <li><b>Ubica la espalda fetal</b>Con las manos sobre el abdomen, recorre ambos lados del útero. La espalda se siente lisa y firme; las rodillas y los codos, más puntiagudos.</li>
+                <li><b>Aplica gel</b>Pon gel en la cara del transductor para que el ultrasonido atraviese bien la piel.</li>
+                <li><b>Colócalo sobre la espalda, cerca de la cabeza</b>Es donde la FCF suele oírse más fuerte. Mueve el transductor despacio hasta tener una señal clara.</li>
+                <li><b>Confirma en la pantalla</b>Mira que el trazado muestre una FCF continua y estable.</li>
+                <li><b>Asegura el cinturón</b>Firme pero cómodo; si el feto se mueve, reposiciona.</li>
+                <li><b>Comprueba que sea el feto y no la madre</b>Cuenta el pulso radial de la paciente durante 1 minuto (o usa un pulsioxímetro) y compáralo con la FCF.</li>
+              </ol>
+          <button type="button" class="btn sm" onclick="guiaTab('g-anim')">🎬 Verlo en movimiento</button>
+        </div>
+
+        <div class="card gpanel hidden" id="g-toco">
+          <h3>Cómo colocar el tocodinamómetro</h3>
+          <p>Es un botón sensible a la presión: cuando el útero se contrae y se endurece, el botón se presiona y la gráfica sube. <b>No lleva gel.</b></p>
+          <ol class="pasos">
+            <li><b>Palpa una contracción</b>Con la mano sobre el fondo del útero, siente dónde se endurece más durante la contracción.</li>
+            <li><b>Colócalo en el fondo uterino</b>En la línea media o apenas hacia un lado, en la zona que más se contrae (ver el esquema de la pestaña anterior).</li>
+            <li><b>Ajusta el cinturón firme</b>Si queda flojo, el botón no detecta los cambios.</li>
+            <li><b>Ajusta la línea base</b>En muchos equipos se regula para que, entre contracciones, la gráfica quede entre 5 y 15 mmHg.</li>
+            <li><b>Verifica</b>Palpa una contracción y comprueba que la curva sube al mismo tiempo.</li>
+          </ol>
+          <div class="callout">El tocodinamómetro externo sirve sobre todo para ver <b>cuándo empieza y termina</b> cada contracción y <b>cada cuánto</b> ocurren. La fuerza de la contracción se evalúa también con la palpación.</div>
+        </div>
+
+        <div class="card gpanel hidden" id="g-anim">
+          <div class="guia-grid">
+            <svg id="sv-guia" viewBox="0 0 320 400" class="esquema" role="img" aria-label="Animación de la colocación de los sensores"></svg>
+            <div>
+              <h3>Así se colocan los sensores</h3>
+              <div class="paso-caja"><b id="g-titulo"></b><p id="g-desc"></p></div>
+              <div class="puntos" id="g-puntos"></div>
+              <div class="lado">
+                <button type="button" class="btn sm sec" onclick="guiaVer(gPaso-1)">◀ Anterior</button>
+                <button type="button" class="btn sm" onclick="guiaVer(gPaso+1)">Siguiente ▶</button>
+                <button type="button" class="btn sm sec" id="g-play" onclick="guiaPlay()">▶ Reproducir</button>
+              </div>
+              <p class="expl">Cambiar el caso (lado de la espalda fetal):</p>
+              <div class="lado">
+                <button type="button" class="btn sm sec" id="g-der" onclick="guiaLado('der')">Espalda a la derecha</button>
+                <button type="button" class="btn sm" id="g-izq" onclick="guiaLado('izq')">Espalda a la izquierda</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card gpanel hidden" id="g-prac">
+          <div class="guia-grid">
+            <svg id="sv-prac" viewBox="0 0 320 400" class="esquema" role="img" aria-label="Ejercicio: arrastra los sensores a su lugar"></svg>
+            <div>
+              <h3>Practica tú: ¿dónde va cada sensor?</h3>
+              <div class="paso-caja"><p id="p-caso"></p></div>
+              <div class="lado">
+                <button type="button" class="btn sm" onclick="comprobar()">Comprobar</button>
+                <button type="button" class="btn sm sec" onclick="verRespuesta()">Ver respuesta</button>
+                <button type="button" class="btn sm sec" onclick="nuevoCaso()">Nuevo caso</button>
+              </div>
+              <div id="p-msg" class="msg"></div>
+              <p id="p-score" class="expl"></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card gpanel hidden" id="g-leer">
+          <h3>Valores de referencia (terminología NICHD)</h3>
+          <div class="scroll"><table><thead><tr><th>Qué observar</th><th>Referencia</th></tr></thead><tbody>
+            <tr><td>FCF basal normal</td><td><b>110 a 160 lpm</b> (promedio en una ventana de 10 min, sin contar aceleraciones ni desaceleraciones)</td></tr>
+            <tr><td>Bradicardia / Taquicardia</td><td>Basal <b>&lt; 110</b> lpm / <b>&gt; 160</b> lpm</td></tr>
+            <tr><td>Variabilidad</td><td>Ausente: no detectable · Mínima: ≤ 5 lpm · <b>Moderada: 6 a 25 lpm</b> · Marcada: &gt; 25 lpm</td></tr>
+            <tr><td>Aceleración</td><td>Aumento brusco de la FCF. Desde las 32 semanas: ≥ 15 lpm durante ≥ 15 s. Antes de las 32 semanas: ≥ 10 lpm durante ≥ 10 s.</td></tr>
+            <tr><td>Desaceleración</td><td>Caída de la FCF. <b>Temprana</b>: gradual, coincide con la contracción. <b>Variable</b>: brusca, de forma y momento cambiantes. <b>Tardía</b>: desfasada, ocurre después del pico de la contracción. <b>Prolongada</b>: ≥ 2 min y &lt; 10 min.</td></tr>
+            <tr><td>Contracciones</td><td>Normal: <b>≤ 5 en 10 min</b>, promediadas en 30 min. Taquisistolia: <b>&gt; 5 en 10 min</b>.</td></tr>
+          </tbody></table></div>
+          <div class="callout">Un trazado <b>Categoría I</b> (normal) tiene FCF basal 110 a 160, variabilidad moderada y sin desaceleraciones tardías ni variables. Como estudiante, tu papel es <b>reconocer</b> los patrones y avisar a tu docente o al médico, no decidir conductas.</div>
+          <p class="expl">En la pantalla del monitor de esta plataforma la escala de contracciones es relativa (0 a 100), y la zona verde marca el rango normal de la FCF.</p>
+        </div>
+
+        <div class="card gpanel hidden" id="g-prob">
+          <h3>Problemas frecuentes y qué revisar</h3>
+          <div class="scroll"><table><thead><tr><th>Lo que ves</th><th>Qué puedes hacer</th></tr></thead><tbody>
+            <tr><td>La señal del Doppler se corta o es irregular</td><td>Vuelve a palpar la espalda fetal, añade gel, reposiciona el transductor y revisa el cinturón. El movimiento de la paciente o del feto, la obesidad materna y la posición fetal dificultan la señal.</td></tr>
+            <tr><td>La FCF parece muy baja o igual al pulso de la madre</td><td>Puede estar registrándose el pulso materno. Cuenta su pulso radial 1 minuto y compara; si coinciden, reposiciona el transductor.</td></tr>
+            <tr><td>La gráfica de contracciones está plana o no cambia</td><td>Palpa el fondo uterino, reubica el tocodinamómetro donde el útero se endurece y aprieta el cinturón.</td></tr>
+            <tr><td>La paciente se siente mareada estando boca arriba</td><td>Ayúdala a pasar a posición lateral o semisentada y avisa a tu docente.</td></tr>
+            <tr><td>Aparece una desaceleración o una FCF fuera de 110–160</td><td>Primero confirma que el sensor está bien colocado y que no es la FC materna; luego avisa al docente o al médico.</td></tr>
+          </tbody></table></div>
+        </div>
+
+        <div class="card gpanel hidden" id="g-quiz">
+          <h3>Autoevaluación</h3>
+          <div id="quiz"></div>
+          <p id="quiz-res" style="font-weight:700;color:var(--primary)"></p>
+          <button type="button" class="btn sm sec" onclick="iniciarQuiz()">Reiniciar</button>
+        </div>
+      </section>
+
+      <!-- TECNICO: sensores -->
+      <section id="sec-sensores" class="hidden">
+        <h2>Estado de los sensores</h2>
+        <p id="alerta" class="alerta hidden">⚠️ Hay un sensor con problemas. Revísalo y registra un reporte.</p>
+        <div class="card"><div class="sensores" id="sensores"></div></div>
+      </section>
+
+      <!-- TECNICO: reportes -->
+      <section id="sec-reportes" class="hidden">
+        <h2>Reportes técnicos</h2>
+        <div class="card" style="max-width:640px">
+          <h3>Nuevo reporte</h3>
+          <form onsubmit="enviarReporte(event)">
+            <div class="cols">
+              <div class="form-group"><label>Sensor</label><select id="r-sensor"><option>Doppler fetal</option><option>Tocodinamometro</option><option>Otro</option></select></div>
+              <div class="form-group"><label>Tipo</label><select id="r-tipo"><option>Falla</option><option>Cambio de componente</option><option>Mantenimiento</option></select></div>
+            </div>
+            <div class="form-group"><label>¿Qué falló?</label><textarea id="r-que" rows="2" required></textarea></div>
+            <div class="form-group"><label>¿Por qué falló?</label><textarea id="r-por" rows="2" required></textarea></div>
+            <div class="form-group"><label>Componente cambiado (si hubo cambio)</label><input id="r-comp"></div>
+            <div class="form-group"><label>Acciones realizadas</label><textarea id="r-acc" rows="2"></textarea></div>
+            <button class="btn">Guardar reporte</button>
+          </form>
+        </div>
+        <div class="card"><h3>Mis reportes</h3><div class="scroll"><table><thead><tr>
+          <th>Fecha</th><th>Sensor</th><th>Tipo</th><th>Qué falló</th><th>Por qué</th><th>Componente</th><th>Acciones</th></tr></thead>
+          <tbody id="t-reps"></tbody></table></div><p id="v-reps" class="vacio hidden">Aún no hay reportes.</p></div>
+      </section>
+
+  </main>
+</div>
+
+<script>
+const API = location.origin;
+const TOKEN = new URLSearchParams(location.search).get("token");   // el token viaja en la URL
+let ME = null, timer = null;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fecha = s => s ? new Date(s).toLocaleString("es-BO", {dateStyle:"short", timeStyle:"short"}) : "";
+
+async function api(path, method = "GET", body = null) {
+  const url = API + path + (TOKEN ? (path.includes("?") ? "&" : "?") + "token=" + TOKEN : "");
+  const res = await fetch(url, {method, headers: body ? {"Content-Type": "application/json"} : {}, body: body ? JSON.stringify(body) : null});
+  let data = null; try { data = await res.json(); } catch {}
+  if (!res.ok) {
+    if (res.status === 401 && TOKEN) { alert("Tu sesión expiró. Inicia sesión de nuevo."); location.href = location.pathname; }
+    throw new Error(Array.isArray(data?.detail) ? "Dato inválido en: " + data.detail.map(x => x.loc.slice(1).join(".") + " (" + x.msg + ")").join(", ") : (data?.detail || "Error"));
+  }
+  return data;
+}
+
+/* ---------- inicio ---------- */
+window.onload = async () => {
+  if (!TOKEN) {
+    $("auth").classList.remove("hidden");
+    const d = await fetch(API + "/api/check-admin").then(r => r.json());
+    if (!d.has_admin) {
+      $("tabs").classList.add("hidden");
+      $("form-login").classList.add("hidden"); $("form-registro").classList.add("hidden");
+      $("form-first").classList.remove("hidden");
+      $("auth-title").textContent = "Registro inicial";
+      $("auth-sub").textContent = "No existe un administrador. Registra la primera cuenta:";
+    }
+    return;
+  }
+  try { ME = await api("/api/me"); } catch { return; }
+  $("user-tag").textContent = `${ME.nombre} ${ME.apellido} · ${ME.cargo}`;
+  $("app").classList.remove("hidden");
+  construirMenu();
+};
+
+async function hacerLogin(e) {
+  e.preventDefault();
+  try {
+    const d = await api("/api/login", "POST", {rol: $("login-rol").value, usuario: $("login-user").value, contrasena: $("login-pass").value});
+    location.href = `${location.pathname}?token=${d.token}`;
+  } catch (err) { alert(err.message); }
+}
+
+async function crearPrimerAdmin(e) {
+  e.preventDefault();
+  try {
+    await api("/api/first-admin", "POST", {nombre: $("a-nombre").value, apellido: $("a-apellido").value, fecha_nacimiento: $("a-fnac").value,
+      carnet_identidad: $("a-ci").value, celular: $("a-cel").value, usuario: $("a-user").value, contrasena: $("a-pass").value});
+    alert("Administrador creado. Ahora inicia sesión."); location.reload();
+  } catch (err) { alert(err.message); }
+}
+
+function cambiarTab(t) {
+  const login = t === "login";
+  $("tab-login").classList.toggle("active", login);
+  $("tab-registro").classList.toggle("active", !login);
+  $("form-login").classList.toggle("hidden", !login);
+  $("form-registro").classList.toggle("hidden", login);
+  $("auth-title").textContent = login ? "Bienvenido" : "Crear cuenta";
+  $("auth-sub").textContent = login ? "Ingresa tus credenciales para continuar" : "Completa tus datos y elige tu usuario y contraseña";
+}
+
+async function crearCuenta(e) {
+  e.preventDefault();
+  if ($("c-pass").value !== $("c-pass2").value) { alert("Las contraseñas no coinciden."); return; }
+  try {
+    await api("/api/registro", "POST", {rol: $("c-rol").value, nombre: $("c-nombre").value, apellido: $("c-apellido").value,
+      fecha_nacimiento: $("c-fnac").value, carnet_identidad: $("c-ci").value, celular: $("c-cel").value,
+      usuario: $("c-user").value, contrasena: $("c-pass").value});
+    alert("Cuenta creada. Ahora inicia sesión.");
+    $("login-rol").value = $("c-rol").value; $("login-user").value = $("c-user").value;
+    e.target.reset(); cambiarTab("login");
+  } catch (err) { alert(err.message); }
+}
+
+async function salir() { try { await api("/api/logout", "POST"); } catch {} location.href = location.pathname; }
+
+/* ---------- menu por rol ---------- */
+const MENUS = {
+  administrador: [
+    {s: "sec-ops", t: "Operadores", f: cargarOps},
+    {s: "sec-personal", t: "Registrar operador", f: () => abrirPersonal("operador")}],
+  operador: [
+    {s: "sec-pacs", t: "Mis pacientes", f: cargarPacs},
+    {s: "sec-nueva", t: "Registrar paciente", f: abrirNueva},
+    {s: "sec-guia", t: "Guía didáctica", f: abrirGuia}],
+  tecnico: [
+    {s: "sec-sensores", t: "Estado de sensores", f: cargarSensores},
+    {s: "sec-reportes", t: "Reportes técnicos", f: cargarReportes}]
+};
+function construirMenu() {
+  $("menu").innerHTML = MENUS[ME.rol].map((m, i) => `<button class="nav-btn" onclick="irA(${i})">${m.t}</button>`).join("");
+  irA(0);
+}
+function mostrar(sec) {
+  clearInterval(timer);
+  document.querySelectorAll("main section").forEach(s => s.classList.add("hidden"));
+  $(sec).classList.remove("hidden");
+}
+function irA(i) {
+  const m = MENUS[ME.rol][i];
+  document.querySelectorAll(".nav-btn").forEach((b, j) => b.classList.toggle("active", j === i));
+  mostrar(m.s); m.f();
+}
+
+/* ---------- administrador ---------- */
+async function cargarOps() {
+  const ops = await api("/api/operadores");
+  $("t-ops").innerHTML = ops.map(o => `<tr><td>${esc(o.nombre)} ${esc(o.apellido)}</td><td>${esc(o.carnet_identidad)}</td><td>${esc(o.celular)}</td>
+    <td>${esc(o.usuario)}</td><td>${fecha(o.fecha_registro)}</td><td>${o.n_pacientes}</td>
+    <td><button class="btn sm" onclick="verOperador(${o.id_operador})">Ver registro</button>
+    <button class="btn sm del" onclick="borrarOperador(${o.id_operador})">Eliminar</button></td></tr>`).join("");
+  $("v-ops").classList.toggle("hidden", ops.length > 0);
+  const ad = await api("/api/administradores");
+  $("t-admins").innerHTML = ad.map(a => `<tr><td>${esc(a.nombre)} ${esc(a.apellido)}</td><td>${esc(a.carnet_identidad)}</td><td>${esc(a.celular)}</td><td>${esc(a.usuario)}</td><td>${fecha(a.fecha_registro)}</td></tr>`).join("");
+}
+async function verOperador(id) {
+  const d = await api("/api/operadores/" + id);
+  mostrar("sec-op-det");
+  $("det-titulo").textContent = `${d.operador.nombre} ${d.operador.apellido}`;
+  $("det-datos").textContent = `Carnet ${d.operador.carnet_identidad} · Celular ${d.operador.celular || "—"} · Usuario ${d.operador.usuario} · Registrado el ${fecha(d.operador.fecha_registro)}`;
+  $("t-det").innerHTML = d.pacientes.map(p => `<tr><td>${esc(p.nombre)} ${esc(p.apellido)}</td><td>${esc(p.carnet_identidad)}</td><td>${p.edad}</td>
+    <td>${p.mes_gestacion}</td><td>${esc(p.celular)}</td><td>${fecha(p.fecha_registro)}</td>
+    <td><button class="btn sm del" onclick="borrarPaciente(${p.id_paciente}, ${id})">Eliminar</button></td></tr>`).join("");
+  $("v-det").classList.toggle("hidden", d.pacientes.length > 0);
+}
+async function borrarOperador(id) {
+  if (!confirm("Se eliminará el operador y TODAS sus pacientes. ¿Continuar?")) return;
+  try { await api("/api/operadores/" + id, "DELETE"); cargarOps(); } catch (err) { alert(err.message); }
+}
+async function borrarPaciente(pid, oid) {
+  if (!confirm("¿Eliminar esta paciente y sus lecturas?")) return;
+  try { await api("/api/pacientes/" + pid, "DELETE"); verOperador(oid); } catch (err) { alert(err.message); }
+}
+function abrirPersonal(modo) {
+  $("cred-box").classList.add("hidden");
+  document.querySelector("#sec-personal form").reset();
+  $("per-titulo").textContent = modo === "operador" ? "Registrar operador" : "Registrar administrador o servicio técnico";
+  $("g-tipo").classList.toggle("hidden", modo === "operador");
+  $("per-tipo").innerHTML = modo === "operador" ? `<option value="operador">Operador</option>`
+    : `<option value="administrador">Administrador</option><option value="tecnico">Servicio técnico</option>`;
+}
+async function registrarPersonal(e) {
+  e.preventDefault();
+  try {
+    const d = await api("/api/personal", "POST", {tipo: "operador", nombre: $("per-nombre").value, apellido: $("per-apellido").value,
+      fecha_nacimiento: $("per-fnac").value, carnet_identidad: $("per-ci").value, celular: $("per-cel").value});
+    e.target.reset();
+    $("cred-user").textContent = d.usuario; $("cred-pass").textContent = d.contrasena;
+    $("cred-box").classList.remove("hidden");
+  } catch (err) { alert(err.message); }
+}
+
+/* ---------- operador ---------- */
+async function cargarPacs() {
+  const ps = await api("/api/pacientes");
+  $("t-pacs").innerHTML = ps.map(p => `<tr><td>${p.id_paciente}</td><td>${esc(p.nombre)} ${esc(p.apellido)}</td><td>${esc(p.carnet_identidad)}</td>
+    <td>${p.edad}</td><td>${p.mes_gestacion}</td><td>${esc(p.celular)}</td>
+    <td><button class="btn sm" onclick='abrirMonitor(${p.id_paciente}, ${JSON.stringify(p.nombre + " " + p.apellido)})'>Abrir monitor</button></td></tr>`).join("");
+  $("v-pacs").classList.toggle("hidden", ps.length > 0);
+}
+function abrirNueva() {
+  document.querySelector("#sec-nueva form").reset();
+  $("p-mes").innerHTML = [1,2,3,4,5,6,7,8,9].map(m => `<option value="${m}">Mes ${m}</option>`).join("");
+}
+function calcEdad() {
+  const n = new Date($("p-fnac").value), h = new Date();
+  if (isNaN(n)) { $("p-edad").value = ""; return; }
+  let a = h.getFullYear() - n.getFullYear();
+  if (h < new Date(h.getFullYear(), n.getMonth(), n.getDate())) a--;
+  $("p-edad").value = a + " años";
+}
+async function registrarPaciente(e) {
+  e.preventDefault();
+  try {
+    await api("/api/pacientes", "POST", {nombre: $("p-nombre").value, apellido: $("p-apellido").value, fecha_nacimiento: $("p-fnac").value,
+      carnet_identidad: $("p-ci").value, celular: $("p-cel").value, mes_gestacion: parseInt($("p-mes").value)});
+    alert("Paciente registrada."); irA(0);
+  } catch (err) { alert(err.message); }
+}
+
+/* ---------- monitor (Doppler fetal + tocodinamometro) ---------- */
+function dibujar(canvas, vals, min, max, color, zona) {
+  const c = canvas.getContext("2d"), w = canvas.width, h = canvas.height;
+  const y = v => h - (Math.min(Math.max(v, min), max) - min) / (max - min) * h;
+  c.clearRect(0, 0, w, h);
+  if (zona) { c.fillStyle = "rgba(77,119,78,.14)"; c.fillRect(0, y(zona[1]), w, y(zona[0]) - y(zona[1])); }
+  if (!vals.length) return;
+  c.strokeStyle = color; c.lineWidth = 2.2; c.beginPath();
+  vals.forEach((v, i) => { const x = i / Math.max(vals.length - 1, 1) * w; i ? c.lineTo(x, y(v)) : c.moveTo(x, y(v)); });
+  c.stroke();
+}
+function abrirMonitor(pid, nombre) {
+  mostrar("sec-monitor");
+  $("mon-titulo").textContent = nombre; $("sim").checked = false;
+  $("v-fcf").textContent = "--"; $("v-toco").textContent = "--"; $("e-fcf").textContent = "";
+  const refrescar = async () => {
+    try {
+      const d = await api(`/api/pacientes/${pid}/datos`);
+      const f = d.doppler.map(x => x.v), t = d.toco.map(x => x.v);
+      dibujar($("c-fcf"), f, 60, 200, "#D9480F", [110, 160]); dibujar($("c-toco"), t, 0, 100, "#1C5FA8");
+      if (f.length) {
+        const v = f[f.length - 1], ok = v >= 110 && v <= 160;
+        $("v-fcf").textContent = v; $("e-fcf").textContent = ok ? "Normal" : (v < 110 ? "Bradicardia" : "Taquicardia");
+        $("e-fcf").className = ok ? "b-ok" : "b-mal";
+      }
+      if (t.length) $("v-toco").textContent = Math.round(t[t.length - 1]);
+    } catch {}
+  };
+  refrescar();
+  timer = setInterval(async () => {
+    if ($("sim").checked) { try { await api(`/api/pacientes/${pid}/simular`, "POST"); } catch {} }
+    refrescar();
+  }, 1000);
+}
+
+/* ---------- guia didactica ---------- */
+const QUIZ = [
+  {p: "¿Dónde se coloca el transductor Doppler?", o: ["Sobre el fondo uterino", "Sobre la espalda fetal, cerca de la cabeza", "Siempre sobre el ombligo", "Junto al pubis"], c: 1,
+   e: "Los latidos se oyen más fuerte sobre la espalda fetal. Se ubica con las maniobras de Leopold y se confirma viendo la FCF en el trazado."},
+  {p: "¿Dónde se coloca el tocodinamómetro?", o: ["En el fondo uterino, donde la contracción se palpa más firme", "Sobre la espalda fetal", "Debajo del ombligo", "En el costado de la paciente"], c: 0,
+   e: "Se coloca en el fondo del útero, en la zona que más se endurece al contraerse, y se sujeta con el cinturón."},
+  {p: "¿Cuál es el rango normal de la FCF basal?", o: ["60 a 100 lpm", "110 a 160 lpm", "160 a 200 lpm", "90 a 130 lpm"], c: 1,
+   e: "Menos de 110 es bradicardia y más de 160 es taquicardia (sostenida durante más de 10 min)."},
+  {p: "¿Qué sirve para ubicar la espalda fetal antes de colocar el Doppler?", o: ["Maniobra de Valsalva", "Maniobras de Leopold", "Maniobra de Heimlich", "Maniobra de Credé"], c: 1,
+   e: "Las maniobras de Leopold permiten palpar la posición del feto y localizar la espalda."},
+  {p: "¿Cuándo se habla de taquisistolia?", o: ["Más de 5 contracciones en 10 min (promedio de 30 min)", "Menos de 2 contracciones en 10 min", "Una contracción que dura más de 1 min", "Cuando la FCF supera 160"], c: 0,
+   e: "Lo normal es 5 o menos contracciones en 10 minutos, promediadas en 30 minutos."},
+  {p: "¿Qué posición es preferible para la paciente durante el monitoreo?", o: ["Boca arriba y plana", "De lado o semisentada", "De pie sin apoyo", "Boca abajo"], c: 1,
+   e: "Boca arriba, el útero puede comprimir vasos grandes y bajar la presión de la madre, con menos oxígeno para el feto."},
+  {p: "El monitor muestra 85 lpm estables. ¿Qué verificas primero?", o: ["Que no sea el pulso de la madre: tomas su pulso radial 1 minuto", "Nada, es un valor normal", "Que el feto esté dormido", "Subes el volumen"], c: 0,
+   e: "El Doppler puede registrar el pulso materno. Compáralo con su pulso radial (o un pulsioxímetro); si coinciden, reposiciona el transductor."}
+];
+let qOk = 0, qResp = 0;
+function abrirGuia() { armarGuia(); armarPractica(); guiaTab("g-antes"); }
+function guiaTab(id) {
+  if (gTimer) { clearInterval(gTimer); gTimer = null; $("g-play").textContent = "▶ Reproducir"; }
+  document.querySelectorAll(".gpanel").forEach(p => p.classList.toggle("hidden", p.id !== id));
+  document.querySelectorAll(".gtabs .tab").forEach(b => b.classList.toggle("active", b.dataset.p === id));
+  if (id === "g-quiz") iniciarQuiz();
+  if (id === "g-anim") guiaVer(0);
+}
+function iniciarQuiz() {
+  qOk = 0; qResp = 0; $("quiz-res").textContent = "";
+  $("quiz").innerHTML = QUIZ.map((q, i) => `<div class="preg"><b>${i + 1}. ${q.p}</b>` +
+    q.o.map((t, j) => `<button type="button" class="opt" onclick="responder(${i},${j},this)">${t}</button>`).join("") +
+    `<p class="expl hidden" id="ex${i}">${q.e}</p></div>`).join("");
+}
+function responder(i, j, btn) {
+  const caja = btn.parentElement;
+  if (caja.dataset.hecho) return;
+  caja.dataset.hecho = 1;
+  const ok = j === QUIZ[i].c;
+  if (ok) qOk++;
+  qResp++;
+  caja.querySelectorAll(".opt")[QUIZ[i].c].classList.add("ok");
+  if (!ok) btn.classList.add("mal");
+  $("ex" + i).classList.remove("hidden");
+  if (qResp === QUIZ.length) $("quiz-res").textContent = `Resultado: ${qOk} de ${QUIZ.length}. ` + (qOk >= 6 ? "¡Excelente!" : "Repasa las secciones y vuelve a intentarlo.");
+}
+
+/* --- dibujo compartido --- */
+const FETO = `<ellipse cx="160" cy="180" rx="38" ry="64" fill="#F2B59B" stroke="#C58A6A"/><circle cx="160" cy="252" r="22" fill="#F2B59B" stroke="#C58A6A"/>`;
+const DOPPLER = `<circle r="24" fill="transparent"/><circle r="13" fill="#D9480F" stroke="#fff" stroke-width="2"/><path d="M-6 -4q6 4 0 8M-1 -7q10 7 0 14" stroke="#fff" fill="none" stroke-width="1.6"/><text y="-20" text-anchor="middle" style="font-size:10px">Doppler</text>`;
+const TOCO = `<rect x="-32" y="-17" width="64" height="34" rx="8" fill="transparent"/><rect x="-24" y="-11" width="48" height="22" rx="8" fill="#1C5FA8" stroke="#fff" stroke-width="2"/><circle r="5" fill="#9DBDE8"/><text y="-17" text-anchor="middle" style="font-size:10px">Tocodinamómetro</text>`;
+function cuerpo(extra) {
+  return `<text x="8" y="20" style="font-size:10px">◄ Derecha de la paciente</text>
+  <text x="312" y="20" text-anchor="end" style="font-size:10px">Izquierda ►</text>
+  <ellipse cx="160" cy="190" rx="115" ry="150" fill="#FDEFE6" stroke="#C58A6A" stroke-width="2"/>
+  <ellipse cx="160" cy="190" rx="78" ry="105" fill="#F9D5C2" stroke="#D9A185"/>
+  <text x="160" y="318" text-anchor="middle" style="font-size:10px">pelvis</text>` + extra;
+}
+function colocar(g, x, y) {
+  x = Math.max(16, Math.min(304, x)); y = Math.max(34, Math.min(388, y));
+  g.dataset.x = x; g.dataset.y = y; g.style.transform = `translate(${x}px,${y}px)`;
+}
+function trazo(tipo) {
+  let d = "";
+  for (let x = 0; x <= 480; x += 4) {
+    const u = 2 * Math.PI * x / 160;
+    const y = tipo === "fcf" ? 361 + 3 * Math.sin(4 * u) + 1.5 * Math.sin(9 * u) : 392 - 18 * Math.pow(Math.max(0, Math.sin(u)), 3);
+    d += (x ? "L" : "M") + (14 + x) + " " + y.toFixed(1);
+  }
+  return d;
+}
+
+/* --- animación paso a paso --- */
+let gPaso = 0, gLado = "izq", gTimer = null;
+const GP = [
+  {t: "Paso 1 · Palpa el abdomen (maniobras de Leopold)", d: l => `Recorre ambos lados del útero con las manos. La espalda fetal se siente lisa y firme; las extremidades, irregulares. En este caso la espalda está del lado ${l === "der" ? "derecho" : "izquierdo"} de la paciente (zona resaltada en amarillo).`},
+  {t: "Paso 2 · Pon gel en el Doppler", d: () => "Una gota de gel en la cara del transductor permite que el ultrasonido atraviese la piel. El tocodinamómetro no lleva gel."},
+  {t: "Paso 3 · Coloca el Doppler sobre la espalda, cerca de la cabeza", d: () => "Ahí la frecuencia cardiaca fetal suele oírse más fuerte. Mueve el transductor despacio hasta tener una señal clara y confírmala en la pantalla."},
+  {t: "Paso 4 · Palpa el fondo y coloca el tocodinamómetro", d: () => "Siente en el fondo del útero dónde se endurece más al contraerse y coloca ahí el sensor, en la línea media o apenas hacia un lado."},
+  {t: "Paso 5 · Sujeta los cinturones", d: () => "Firmes pero cómodos. Si el tocodinamómetro queda flojo no detecta las contracciones; si el Doppler se mueve, pierdes la señal."},
+  {t: "Paso 6 · Así debe quedar", d: () => "Doppler sobre la espalda fetal y tocodinamómetro en el fondo uterino. En el monitor se ve la FCF continua dentro de 110 a 160 lpm (línea roja) y la curva de contracciones (azul) que sube cuando palpas una contracción. Verifica siempre que la FCF no sea el pulso de la madre."}
+];
+function armarGuia() {
+  $("sv-guia").innerHTML = cuerpo(`
+    <text x="160" y="62" text-anchor="middle" style="font-size:10px">fondo uterino</text>
+    <g id="g-feto">${FETO}<path id="g-res" d="M192 135Q206 180 188 232" stroke="#F2A93B" stroke-width="7" stroke-linecap="round" fill="none" style="transition:opacity .4s"/></g>
+    <path id="b1" class="cint" d="M44 112Q160 118 276 112"/>
+    <path id="b2" class="cint" d="M44 228Q160 234 276 228"/>
+    <text id="m1" class="mano" x="12" y="200" style="font-size:26px;transition:opacity .3s">✋</text>
+    <text id="m2" class="mano r" x="282" y="200" style="font-size:26px;transition:opacity .3s">✋</text>
+    <text id="m3" class="mano r" x="214" y="126" style="font-size:26px;transition:opacity .3s;opacity:0">✋</text>
+    <g id="g-dop" style="transform:translate(70px,372px);transition:transform 1s ease">${DOPPLER}
+      <g id="ondas" style="opacity:0;transition:opacity .4s"><path class="onda" d="M17 -8q8 8 0 16M23 -12q12 12 0 24" stroke="#D9480F" fill="none" stroke-width="2"/></g>
+      <circle id="gel" cx="0" cy="20" r="5" fill="#BFE6F2" stroke="#6BB6D6" style="opacity:0;transition:opacity .3s"/></g>
+    <g id="g-toc" style="transform:translate(250px,372px);transition:transform 1s ease">${TOCO}</g>
+    <g id="g-mon" style="opacity:0;transition:opacity .5s">
+      <rect x="10" y="346" width="300" height="52" rx="8" fill="#FFF8F9" stroke="#F3B0C3"/>
+      <clipPath id="clip-m"><rect x="14" y="348" width="292" height="48"/></clipPath>
+      <g clip-path="url(#clip-m)"><g class="desfile">
+        <path d="${trazo("fcf")}" fill="none" stroke="#D9480F" stroke-width="1.8"/>
+        <path d="${trazo("toco")}" fill="none" stroke="#1C5FA8" stroke-width="1.8"/></g></g></g>`);
+  guiaVer(gPaso);
+}
+function guiaVer(n) {
+  gPaso = Math.max(0, Math.min(GP.length - 1, n));
+  const der = gLado === "der", xD = der ? 124 : 196, p = gPaso;
+  const mover = (id, x, y) => { $(id).style.transform = `translate(${x}px,${y}px)`; };
+  $("g-feto").setAttribute("transform", der ? "translate(320,0) scale(-1,1)" : "");
+  $("g-res").style.opacity = p === 0 ? 1 : 0;
+  $("m1").style.opacity = $("m2").style.opacity = p === 0 ? 1 : 0;
+  $("m3").style.opacity = p === 3 ? 1 : 0;
+  $("gel").style.opacity = p === 1 ? 1 : 0;
+  $("ondas").style.opacity = p >= 2 ? 1 : 0;
+  mover("g-dop", p >= 2 ? xD : 70, p >= 2 ? 228 : 372);
+  mover("g-toc", p >= 3 ? 160 : 250, p >= 3 ? 112 : 372);
+  $("b1").classList.toggle("on", p >= 4); $("b2").classList.toggle("on", p >= 4);
+  $("g-mon").style.opacity = p === 5 ? 1 : 0;
+  $("g-titulo").textContent = GP[p].t; $("g-desc").textContent = GP[p].d(gLado);
+  $("g-puntos").innerHTML = GP.map((_, i) => `<span class="punto${i === p ? " on" : ""}"></span>`).join("");
+}
+function guiaLado(l) {
+  gLado = l; guiaVer(gPaso);
+  $("g-der").classList.toggle("sec", l !== "der"); $("g-izq").classList.toggle("sec", l === "der");
+}
+function guiaPlay() {
+  if (gTimer) { clearInterval(gTimer); gTimer = null; $("g-play").textContent = "▶ Reproducir"; return; }
+  if (gPaso >= GP.length - 1) guiaVer(0);
+  $("g-play").textContent = "⏸ Pausa";
+  gTimer = setInterval(() => {
+    if (gPaso >= GP.length - 1) { clearInterval(gTimer); gTimer = null; $("g-play").textContent = "▶ Reproducir"; return; }
+    guiaVer(gPaso + 1);
+  }, 4000);
+}
+
+/* --- practica: arrastrar los sensores --- */
+const P = {lado: "izq", ok: 0, listo: false, contado: false};
+function puntoSVG(svg, e) {
+  const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+  return pt.matrixTransform(svg.getScreenCTM().inverse());
+}
+function armarPractica() {
+  const svg = $("sv-prac");
+  svg.style.touchAction = "none";
+  svg.innerHTML = cuerpo(`
+    <g id="p-feto" style="opacity:0;transition:opacity .4s">${FETO}</g>
+    <g id="p-metas" style="opacity:0;transition:opacity .4s">
+      <circle id="meta-d" r="32" cy="228" fill="rgba(77,119,78,.18)" stroke="#4D774E" stroke-dasharray="4 3"/>
+      <ellipse cx="160" cy="112" rx="48" ry="26" fill="rgba(77,119,78,.18)" stroke="#4D774E" stroke-dasharray="4 3"/></g>
+    <g id="p-dop" style="cursor:grab">${DOPPLER}</g>
+    <g id="p-toc" style="cursor:grab">${TOCO}</g>`);
+  ["p-dop", "p-toc"].forEach(id => {
+    const g = $(id); let arrastrando = false;
+    g.addEventListener("pointerdown", e => { arrastrando = true; g.setPointerCapture(e.pointerId); g.classList.remove("s-ok", "s-mal"); e.preventDefault(); });
+    g.addEventListener("pointermove", e => { if (arrastrando) { const q = puntoSVG(svg, e); colocar(g, q.x, q.y); } });
+    g.addEventListener("pointerup", () => { arrastrando = false; });
+    g.addEventListener("pointercancel", () => { arrastrando = false; });
+  });
+  nuevoCaso();
+}
+function nuevoCaso() {
+  P.lado = Math.random() < 0.5 ? "der" : "izq"; P.contado = false; P.listo = true;
+  $("p-feto").style.opacity = 0; $("p-metas").style.opacity = 0;
+  $("p-feto").setAttribute("transform", P.lado === "der" ? "translate(320,0) scale(-1,1)" : "");
+  $("meta-d").setAttribute("cx", P.lado === "der" ? 124 : 196);
+  colocar($("p-dop"), 70, 372); colocar($("p-toc"), 250, 372);
+  $("p-dop").classList.remove("s-ok", "s-mal"); $("p-toc").classList.remove("s-ok", "s-mal");
+  $("p-msg").innerHTML = ""; $("p-score").textContent = `Casos resueltos: ${P.ok}`;
+  $("p-caso").textContent = `Con las maniobras de Leopold sientes la espalda fetal del lado ${P.lado === "der" ? "derecho" : "izquierdo"} de la paciente, y la cabeza del feto hacia la pelvis. Arrastra los dos sensores al abdomen donde corresponde y pulsa “Comprobar”.`;
+}
+function comprobar() {
+  const d = $("p-dop"), t = $("p-toc");
+  const dx = +d.dataset.x, dy = +d.dataset.y, tx = +t.dataset.x, ty = +t.dataset.y;
+  const objX = P.lado === "der" ? 124 : 196, lado = P.lado === "der" ? "derecho" : "izquierdo";
+  let dopOk = false, tocOk = false; const msgs = [];
+  if (dy > 345) msgs.push("⚠️ Falta colocar el Doppler sobre el abdomen.");
+  else if (Math.hypot(dx - objX, dy - 228) <= 32) { dopOk = true; msgs.push("✅ Doppler: bien colocado, sobre la espalda fetal y cerca de la cabeza."); }
+  else if (Math.abs(dx - 160) > 20 && (dx < 160) !== (objX < 160)) msgs.push(`❌ Doppler: ese lado corresponde a las extremidades. En este caso la espalda está del lado ${lado}.`);
+  else if (dy < 190) msgs.push("❌ Doppler: está muy arriba. Bájalo hacia la zona cercana a la cabeza fetal.");
+  else msgs.push("❌ Doppler: acércalo más a la espalda fetal, cerca de la cabeza.");
+  if (ty > 345) msgs.push("⚠️ Falta colocar el tocodinamómetro sobre el abdomen.");
+  else if (((tx - 160) / 48) ** 2 + ((ty - 112) / 26) ** 2 <= 1) { tocOk = true; msgs.push("✅ Tocodinamómetro: bien colocado en el fondo uterino."); }
+  else msgs.push("❌ Tocodinamómetro: va en el fondo uterino, la parte más alta del útero, en la línea media o apenas a un lado.");
+  d.classList.toggle("s-ok", dopOk); d.classList.toggle("s-mal", !dopOk && dy <= 345);
+  t.classList.toggle("s-ok", tocOk); t.classList.toggle("s-mal", !tocOk && ty <= 345);
+  if (dopOk && tocOk) {
+    if (!P.contado) { P.contado = true; P.ok++; }
+    msgs.push("🎉 ¡Muy bien! Recuerda confirmar en el monitor que la FCF no sea el pulso de la madre.");
+  }
+  $("p-msg").innerHTML = msgs.map(m => `<p>${m}</p>`).join("");
+  $("p-score").textContent = `Casos resueltos: ${P.ok}`;
+}
+function verRespuesta() {
+  $("p-feto").style.opacity = 1; $("p-metas").style.opacity = 1;
+  $("p-msg").innerHTML = "<p>Las zonas verdes marcan dónde van los sensores: el Doppler sobre la espalda del feto, cerca de la cabeza, y el tocodinamómetro en el fondo uterino.</p>";
+}
+
+/* ---------- servicio tecnico ---------- */
+async function cargarSensores() {
+  const pintar = async () => {
+    try {
+      const s = await api("/api/sensores/estado");
+      $("sensores").innerHTML = s.map(x => `<div class="sensor ${x.estado}"><h3>${esc(x.sensor)}</h3><p>${esc(x.mensaje)}</p></div>`).join("");
+      $("alerta").classList.toggle("hidden", s.every(x => x.estado === "ok"));
+    } catch {}
+  };
+  pintar(); timer = setInterval(pintar, 3000);
+}
+async function cargarReportes() {
+  const r = await api("/api/reportes");
+  $("t-reps").innerHTML = r.map(x => `<tr><td>${fecha(x.fecha)}</td><td>${esc(x.sensor)}</td><td>${esc(x.tipo)}</td><td>${esc(x.que_fallo)}</td>
+    <td>${esc(x.por_que)}</td><td>${esc(x.componente_cambiado) || "—"}</td><td>${esc(x.acciones) || "—"}</td></tr>`).join("");
+  $("v-reps").classList.toggle("hidden", r.length > 0);
+}
+async function enviarReporte(e) {
+  e.preventDefault();
+  try {
+    await api("/api/reportes", "POST", {sensor: $("r-sensor").value, tipo: $("r-tipo").value, que_fallo: $("r-que").value,
+      por_que: $("r-por").value, componente_cambiado: $("r-comp").value, acciones: $("r-acc").value});
+    e.target.reset(); alert("Reporte guardado."); cargarReportes();
+  } catch (err) { alert(err.message); }
+}
+</script>
+</body>
+</html>
