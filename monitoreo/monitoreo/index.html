@@ -451,7 +451,7 @@ tbody tr:hover{background:#F8FBFB}td .btn{margin-right:4px}
 </div>
 
 <script>
-const API = location.origin;
+const API = window.location.origin;
 const TOKEN = new URLSearchParams(location.search).get("token");   // el token viaja en la URL
 let ME = null, timer = null;
 const $ = id => document.getElementById(id);
