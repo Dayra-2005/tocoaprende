@@ -15,17 +15,20 @@ from psycopg2.extras import RealDictCursor
 app = FastAPI(title="API Monitoreo Materno-Fetal")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
-# =====================  CONFIGURACION (cambia estos datos)  =====================
+import os
+
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
 DB_CONFIG = {
     "host": "localhost",
-    "database": "monitoreo",   # <--- nombre de tu base en pgAdmin
+    "database": "monitoreo",
     "user": "postgres",
-    "password": "12345678",       # <--- tu contraseña de PostgreSQL
+    "password": os.environ.get("DB_PASSWORD", "12345678"),
     "port": "5432",
 }
-API_KEY_DISPOSITIVO = "cambia-esta-clave"   # clave que usara el equipo (ESP32) para enviar lecturas
+
+API_KEY_DISPOSITIVO = os.environ.get("API_KEY_DISPOSITIVO", "cambia-esta-clave")
 HORAS_SESION = 2
-# ===============================================================================
 
 ALFANUM = string.ascii_letters + string.digits
 # rol -> (tabla, columna id, cargo)
@@ -39,7 +42,10 @@ ROLES = {"administrador": ("administrador", "id_administrador", "Administrador")
 def tx():
     """Abre conexion, confirma al terminar bien y revierte si hay error."""
     try:
-        conn = psycopg2.connect(**DB_CONFIG, cursor_factory=RealDictCursor)
+        if DATABASE_URL:
+            conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+        else:
+            conn = psycopg2.connect(**DB_CONFIG, cursor_factory=RealDictCursor)
     except Exception as e:
         raise HTTPException(500, f"Error conectando a PostgreSQL: {e}")
     cur = conn.cursor()
@@ -52,7 +58,6 @@ def tx():
     finally:
         cur.close()
         conn.close()
-
 
 def hash_pw(p: str, salt: Optional[str] = None) -> str:
     salt = salt or secrets.token_hex(8)
