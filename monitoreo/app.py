@@ -26,9 +26,11 @@ DB_CONFIG = {
     "password": os.environ.get("DB_PASSWORD", "12345678"),
     "port": "5432",
 }
-
 API_KEY_DISPOSITIVO = os.environ.get("API_KEY_DISPOSITIVO", "cambia-esta-clave")
 HORAS_SESION = 2
+# Paciente que el operador tiene abierta en el monitor (a ella van las lecturas del ESP32)
+ACTIVA = {"id": None, "t": 0.0}
+SEGUNDOS_ACTIVA = 30
 
 ALFANUM = string.ascii_letters + string.digits
 # rol -> (tabla, columna id, cargo)
@@ -140,7 +142,7 @@ class PacienteNuevo(Persona):
     mes_gestacion: int = Field(ge=1, le=9)
 
 class Lectura(BaseModel):
-    id_paciente: int
+    id_paciente: Optional[int] = None
     fcf: Optional[int] = None
     toco: Optional[float] = None
 
@@ -327,6 +329,8 @@ def datos_paciente(pid: int, token: str = Query(...)):
     with tx() as cur:
         u = auth(cur, token, "operador")
         mi_paciente(cur, u, pid)
+        ACTIVA["id"] = pid
+        ACTIVA["t"] = time.time()
         cur.execute("SELECT fcf AS v, fecha FROM lectura_doppler WHERE id_paciente=%s ORDER BY fecha DESC LIMIT 120", (pid,))
         d = cur.fetchall()
         cur.execute("SELECT presion AS v, fecha FROM lectura_tocodinamometro WHERE id_paciente=%s ORDER BY fecha DESC LIMIT 120", (pid,))
@@ -350,14 +354,20 @@ def simular(pid: int, token: str = Query(...)):
 
 @app.post("/api/lectura")
 def recibir_lectura(d: Lectura, x_api_key: Optional[str] = Header(None)):
-    """Endpoint para el equipo real (ESP32/Arduino). Header X-API-KEY."""
+    """Endpoint para el equipo real (ESP32). Header X-API-KEY.
+    Si no manda id_paciente, usa la paciente cuyo monitor esta abierto."""
     if x_api_key != API_KEY_DISPOSITIVO:
         raise HTTPException(403, "Clave de dispositivo incorrecta.")
+    pid = d.id_paciente
+    if pid is None:
+        if ACTIVA["id"] is None or time.time() - ACTIVA["t"] > SEGUNDOS_ACTIVA:
+            raise HTTPException(409, "No hay ninguna paciente con el monitor abierto.")
+        pid = ACTIVA["id"]
     with tx() as cur:
-        cur.execute("SELECT 1 FROM paciente WHERE id_paciente=%s", (d.id_paciente,))
+        cur.execute("SELECT 1 FROM paciente WHERE id_paciente=%s", (pid,))
         if not cur.fetchone():
             raise HTTPException(404, "Paciente no encontrada.")
-        guardar_lectura(cur, d.id_paciente, d.fcf, d.toco)
+        guardar_lectura(cur, pid, d.fcf, d.toco)
     return {"status": "ok"}
 
 
