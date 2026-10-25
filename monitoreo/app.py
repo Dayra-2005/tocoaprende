@@ -26,7 +26,7 @@ DB_CONFIG = {
     "password": os.environ.get("DB_PASSWORD", "12345678"),
     "port": "5432",
 }
-API_KEY_DISPOSITIVO = os.environ.get("API_KEY_DISPOSITIVO", "cambia-esta-clave")
+API_KEY_DISPOSITIVO = os.environ.get("API_KEY_DISPOSITIVO", "kuky2005")
 HORAS_SESION = 2
 # Paciente que el operador tiene abierta en el monitor (a ella van las lecturas del ESP32)
 ACTIVA = {"id": None, "t": 0.0}
