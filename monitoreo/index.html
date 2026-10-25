@@ -552,7 +552,7 @@ function abrirPersonal(modo) {
 async function registrarPersonal(e) {
   e.preventDefault();
   try {
-    const d = await api("/api/personal", "POST", {{tipo: $("per-tipo").value, nombre: $("per-nombre").value, apellido: $("per-apellido").value,
+    const d = await api("/api/personal", "POST", {tipo: $("per-tipo").value, nombre: $("per-nombre").value, apellido: $("per-apellido").value,
       fecha_nacimiento: $("per-fnac").value, carnet_identidad: $("per-ci").value, celular: $("per-cel").value});
     e.target.reset();
     $("cred-user").textContent = d.usuario; $("cred-pass").textContent = d.contrasena;
