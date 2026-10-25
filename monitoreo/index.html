@@ -129,10 +129,6 @@ tbody tr:hover{background:#F8FBFB}td .btn{margin-right:4px}
   </div>
   <div class="auth-panel">
   <div class="auth-box">
-    <div class="tabs" id="tabs">
-      <button type="button" class="tab active" id="tab-login" onclick="cambiarTab('login')">Iniciar sesión</button>
-      <button type="button" class="tab" id="tab-registro" onclick="cambiarTab('registro')">Crear cuenta</button>
-    </div>
     <h2 id="auth-title">Bienvenido</h2>
     <p id="auth-sub">Ingresa tus credenciales para continuar</p>
 
@@ -146,26 +142,6 @@ tbody tr:hover{background:#F8FBFB}td .btn{margin-right:4px}
     </form>
 
     <!-- CREAR CUENTA NUEVA -->
-    <form id="form-registro" class="hidden" onsubmit="crearCuenta(event)">
-      <div class="form-group"><label>Tipo de cuenta</label>
-        <select id="c-rol"><option value="administrador">Administrador</option><option value="tecnico">Servicio técnico</option></select></div>
-      <div class="cols">
-        <div class="form-group"><label>Nombre</label><input id="c-nombre" required></div>
-        <div class="form-group"><label>Apellido</label><input id="c-apellido" required></div>
-      </div>
-      <div class="cols">
-        <div class="form-group"><label>Fecha de nacimiento</label><input type="date" id="c-fnac" required></div>
-        <div class="form-group"><label>Carnet de identidad</label><input id="c-ci" required></div>
-      </div>
-      <div class="form-group"><label>Celular</label><input id="c-cel"></div>
-      <div class="form-group"><label>Usuario</label><input id="c-user" required autocomplete="off"></div>
-      <div class="cols">
-        <div class="form-group"><label>Contraseña</label><input type="password" id="c-pass" required minlength="6" autocomplete="new-password"></div>
-        <div class="form-group"><label>Repetir contraseña</label><input type="password" id="c-pass2" required minlength="6" autocomplete="new-password"></div>
-      </div>
-      <button class="btn full">Crear cuenta</button>
-    </form>
-
     <!-- PRIMER ADMINISTRADOR (solo aparece si no existe ninguno) -->
     <form id="form-first" class="hidden" onsubmit="crearPrimerAdmin(event)">
       <div class="cols">
@@ -475,8 +451,7 @@ window.onload = async () => {
     $("auth").classList.remove("hidden");
     const d = await fetch(API + "/api/check-admin").then(r => r.json());
     if (!d.has_admin) {
-      $("tabs").classList.add("hidden");
-      $("form-login").classList.add("hidden"); $("form-registro").classList.add("hidden");
+      $("form-login").classList.add("hidden");
       $("form-first").classList.remove("hidden");
       $("auth-title").textContent = "Registro inicial";
       $("auth-sub").textContent = "No existe un administrador. Registra la primera cuenta:";
@@ -506,36 +481,14 @@ async function crearPrimerAdmin(e) {
   } catch (err) { alert(err.message); }
 }
 
-function cambiarTab(t) {
-  const login = t === "login";
-  $("tab-login").classList.toggle("active", login);
-  $("tab-registro").classList.toggle("active", !login);
-  $("form-login").classList.toggle("hidden", !login);
-  $("form-registro").classList.toggle("hidden", login);
-  $("auth-title").textContent = login ? "Bienvenido" : "Crear cuenta";
-  $("auth-sub").textContent = login ? "Ingresa tus credenciales para continuar" : "Completa tus datos y elige tu usuario y contraseña";
-}
-
-async function crearCuenta(e) {
-  e.preventDefault();
-  if ($("c-pass").value !== $("c-pass2").value) { alert("Las contraseñas no coinciden."); return; }
-  try {
-    await api("/api/registro", "POST", {rol: $("c-rol").value, nombre: $("c-nombre").value, apellido: $("c-apellido").value,
-      fecha_nacimiento: $("c-fnac").value, carnet_identidad: $("c-ci").value, celular: $("c-cel").value,
-      usuario: $("c-user").value, contrasena: $("c-pass").value});
-    alert("Cuenta creada. Ahora inicia sesión.");
-    $("login-rol").value = $("c-rol").value; $("login-user").value = $("c-user").value;
-    e.target.reset(); cambiarTab("login");
-  } catch (err) { alert(err.message); }
-}
-
 async function salir() { try { await api("/api/logout", "POST"); } catch {} location.href = location.pathname; }
 
 /* ---------- menu por rol ---------- */
 const MENUS = {
   administrador: [
     {s: "sec-ops", t: "Operadores", f: cargarOps},
-    {s: "sec-personal", t: "Registrar operador", f: () => abrirPersonal("operador")}],
+    {s: "sec-personal", t: "Registrar operador", f: () => abrirPersonal("operador")},
+    {s: "sec-personal", t: "Registrar técnico o admin", f: () => abrirPersonal("otro")}],
   operador: [
     {s: "sec-pacs", t: "Mis pacientes", f: cargarPacs},
     {s: "sec-nueva", t: "Registrar paciente", f: abrirNueva},
@@ -599,7 +552,7 @@ function abrirPersonal(modo) {
 async function registrarPersonal(e) {
   e.preventDefault();
   try {
-    const d = await api("/api/personal", "POST", {tipo: "operador", nombre: $("per-nombre").value, apellido: $("per-apellido").value,
+    const d = await api("/api/personal", "POST", {{tipo: $("per-tipo").value, nombre: $("per-nombre").value, apellido: $("per-apellido").value,
       fecha_nacimiento: $("per-fnac").value, carnet_identidad: $("per-ci").value, celular: $("per-cel").value});
     e.target.reset();
     $("cred-user").textContent = d.usuario; $("cred-pass").textContent = d.contrasena;
