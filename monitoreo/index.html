@@ -599,6 +599,27 @@ function dibujar(canvas, vals, min, max, color, zona) {
   vals.forEach((v, i) => { const x = i / Math.max(vals.length - 1, 1) * w; i ? c.lineTo(x, y(v)) : c.moveTo(x, y(v)); });
   c.stroke();
 }
+
+function dibujarPicos(canvas, vals, min, max, color) {
+  const c = canvas.getContext("2d"), w = canvas.width, h = canvas.height;
+  const y = v => h - (Math.min(Math.max(v, min), max) - min) / (max - min) * h;
+  c.clearRect(0, 0, w, h);
+  c.strokeStyle = color;
+  c.lineWidth = 1;
+  c.beginPath();
+  c.moveTo(0, h - 1);
+  c.lineTo(w, h - 1);
+  c.stroke();
+  c.lineWidth = 4;
+  vals.forEach((v, i) => {
+    if (v < 5) return;
+    const x = i / Math.max(vals.length - 1, 1) * w;
+    c.beginPath();
+    c.moveTo(x, h);
+    c.lineTo(x, y(v));
+    c.stroke();
+  });
+}
 function abrirMonitor(pid, nombre) {
   mostrar("sec-monitor");
   $("mon-titulo").textContent = nombre; $("sim").checked = false;
@@ -607,7 +628,7 @@ function abrirMonitor(pid, nombre) {
     try {
       const d = await api(`/api/pacientes/${pid}/datos`);
       const f = d.doppler.map(x => x.v), t = d.toco.map(x => x.v);
-      dibujar($("c-fcf"), f, 60, 200, "#D9480F", [110, 160]); dibujar($("c-toco"), t, 0, 100, "#1C5FA8");
+      dibujar($("c-fcf"), f, 60, 200, "#D9480F", [110, 160]); dibujarPicos($("c-toco"), t, 0, 100, "#1C5FA8");
       if (f.length) {
         const v = f[f.length - 1], ok = v >= 110 && v <= 160;
         $("v-fcf").textContent = v; $("e-fcf").textContent = ok ? "Normal" : (v < 110 ? "Bradicardia" : "Taquicardia");
