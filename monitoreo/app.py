@@ -346,8 +346,8 @@ def simular(pid: int, token: str = Query(...)):
         u = auth(cur, token, "operador")
         mi_paciente(cur, u, pid)
         t = time.time()
-        fcf = int(142 + 6 * math.sin(t / 7) + random.randint(-3, 3))
-        toco = round(8 + max(0, math.sin(t / 12)) ** 3 * 70 + random.uniform(-2, 2), 1)
+        fcf = int(142 + 6 * math.sin(t / 4) + random.randint(-3, 3))
+        toco = round(8 + max(0, math.sin(t / 8)) ** 3 * 70 + random.uniform(-2, 2), 1)
         guardar_lectura(cur, pid, fcf, toco)
     return {"status": "ok"}
 
