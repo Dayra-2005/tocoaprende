@@ -590,7 +590,8 @@ async function registrarPaciente(e) {
 
 /* ---------- monitor (Doppler fetal + tocodinamometro) ---------- */
 function dibujar(canvas, vals, min, max, color, zona, suave) {
-  const c = canvas.getContext("2d"), w = canvas.width, h = canvas.height, N = 120;
+  const c = canvas.getContext("2d"), w = canvas.width, h = canvas.height, N = 80;
+  vals = vals.slice(-N);
   const y = v => h - (Math.min(Math.max(v, min), max) - min) / (max - min) * h;
   c.clearRect(0, 0, w, h);
   if (zona) {
@@ -642,7 +643,12 @@ function abrirMonitor(pid, nombre) {
         $("v-fcf").textContent = v; $("e-fcf").textContent = ok ? "Normal" : (v < 110 ? "Bradicardia" : "Taquicardia");
         $("e-fcf").className = ok ? "b-ok" : "b-mal";
       }
-      if (t.length) $("v-toco").textContent = Math.round(t[t.length - 1]);
+      let n = 0, arriba = false;
+      t.forEach(v => {
+        if (!arriba && v >= 30) { n++; arriba = true; }
+        else if (arriba && v < 20) { arriba = false; }
+      });
+      $("v-toco").textContent = n;
     } catch {}
   };
   refrescar();
