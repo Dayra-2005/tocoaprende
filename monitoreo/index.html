@@ -589,36 +589,44 @@ async function registrarPaciente(e) {
 }
 
 /* ---------- monitor (Doppler fetal + tocodinamometro) ---------- */
-function dibujar(canvas, vals, min, max, color, zona) {
-  const c = canvas.getContext("2d"), w = canvas.width, h = canvas.height;
+function dibujar(canvas, vals, min, max, color, zona, suave) {
+  const c = canvas.getContext("2d"), w = canvas.width, h = canvas.height, N = 120;
   const y = v => h - (Math.min(Math.max(v, min), max) - min) / (max - min) * h;
   c.clearRect(0, 0, w, h);
-  if (zona) { c.fillStyle = "rgba(77,119,78,.14)"; c.fillRect(0, y(zona[1]), w, y(zona[0]) - y(zona[1])); }
+  if (zona) {
+    c.fillStyle = "rgba(77,119,78,.14)";
+    c.fillRect(0, y(zona[1]), w, y(zona[0]) - y(zona[1]));
+  }
+  c.fillStyle = "#8A7A5C";
+  c.font = "12px sans-serif";
+  const paso = (max - min) > 150 ? 30 : 20;
+  for (let v = Math.ceil(min / paso) * paso; v <= max; v += paso) {
+    c.fillText(v, 4, Math.min(Math.max(y(v) - 3, 12), h - 4));
+  }
   if (!vals.length) return;
-  c.strokeStyle = color; c.lineWidth = 2.2; c.beginPath();
-  vals.forEach((v, i) => { const x = i / Math.max(vals.length - 1, 1) * w; i ? c.lineTo(x, y(v)) : c.moveTo(x, y(v)); });
-  c.stroke();
-}
-
-function dibujarPicos(canvas, vals, min, max, color) {
-  const c = canvas.getContext("2d"), w = canvas.width, h = canvas.height;
-  const y = v => h - (Math.min(Math.max(v, min), max) - min) / (max - min) * h;
-  c.clearRect(0, 0, w, h);
+  let d = vals;
+  if (suave) {
+    d = vals.map((_, i) => {
+      let s = 0, n = 0;
+      for (let k = -3; k <= 3; k++) {
+        const j = i + k;
+        if (j >= 0 && j < vals.length) { s += vals[j]; n++; }
+      }
+      return s / n;
+    });
+  }
+  const pts = d.map((v, i) => [(i + N - d.length) / (N - 1) * w, y(v)]);
   c.strokeStyle = color;
-  c.lineWidth = 1;
+  c.lineWidth = 2;
+  c.lineJoin = "round";
   c.beginPath();
-  c.moveTo(0, h - 1);
-  c.lineTo(w, h - 1);
+  c.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length - 1; i++) {
+    const mx = (pts[i][0] + pts[i + 1][0]) / 2, my = (pts[i][1] + pts[i + 1][1]) / 2;
+    c.quadraticCurveTo(pts[i][0], pts[i][1], mx, my);
+  }
+  c.lineTo(pts[pts.length - 1][0], pts[pts.length - 1][1]);
   c.stroke();
-  c.lineWidth = 4;
-  vals.forEach((v, i) => {
-    if (v < 5) return;
-    const x = i / Math.max(vals.length - 1, 1) * w;
-    c.beginPath();
-    c.moveTo(x, h);
-    c.lineTo(x, y(v));
-    c.stroke();
-  });
 }
 function abrirMonitor(pid, nombre) {
   mostrar("sec-monitor");
@@ -628,7 +636,7 @@ function abrirMonitor(pid, nombre) {
     try {
       const d = await api(`/api/pacientes/${pid}/datos`);
       const f = d.doppler.map(x => x.v), t = d.toco.map(x => x.v);
-      dibujar($("c-fcf"), f, 60, 200, "#D9480F", [110, 160]); dibujarPicos($("c-toco"), t, 0, 100, "#1C5FA8");
+      dibujar($("c-fcf"), f, 30, 240, "#D9480F", [110, 160]); dibujar($("c-toco"), t, 0, 100, "#1C5FA8", null, true);
       if (f.length) {
         const v = f[f.length - 1], ok = v >= 110 && v <= 160;
         $("v-fcf").textContent = v; $("e-fcf").textContent = ok ? "Normal" : (v < 110 ? "Bradicardia" : "Taquicardia");
