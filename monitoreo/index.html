@@ -258,6 +258,13 @@ tbody tr:hover{background:#F8FBFB}td .btn{margin-right:4px}
       <!-- OPERADOR: monitor -->
       <section id="sec-monitor" class="hidden">
         <div class="top"><h2 id="mon-titulo"></h2><button class="btn sec sm" onclick="irA(0)">← Volver</button></div>
+          <div class="card top" style="padding:14px 18px">
+            <span id="ses-estado" style="font-weight:700;color:var(--ink)">Sin sesión activa</span>
+            <span>
+              <button id="ses-ini" class="btn sm" onclick="iniciarSesion()">▶ Iniciar sesión</button>
+              <button id="ses-fin" class="btn sm del hidden" onclick="finalizarSesion()">■ Finalizar sesión</button>
+            </span>
+          </div>
         <div class="papel">
           <div class="lectura"><span>Doppler fetal (FCF)</span><strong id="v-fcf">--</strong><span>lpm</span><b id="e-fcf"></b></div>
           <canvas id="c-fcf" width="900" height="240"></canvas>
@@ -271,7 +278,21 @@ tbody tr:hover{background:#F8FBFB}td .btn{margin-right:4px}
         <label class="sim"><input type="checkbox" id="sim"> Generar lecturas de práctica (sin equipo conectado)</label>
         <p class="escala" style="margin-top:10px">¿Dudas sobre cómo colocar los sensores o leer el trazado? <a href="#" onclick="irA(2);return false" style="color:var(--primary);font-weight:600">Abrir la guía didáctica</a></p>
       </section>
-
+      <!-- OPERADOR: historial de sesiones -->
+      <section id="sec-historial" class="hidden">
+        <div class="top"><h2 id="his-titulo"></h2><button class="btn sec sm" onclick="irA(0)">← Volver</button></div>
+        <div class="card">
+          <div class="scroll"><table><thead><tr>
+            <th>N.°</th><th>Inicio</th><th>Duración</th><th>FCF promedio</th><th>FCF mín – máx</th><th>Notas</th><th></th></tr></thead>
+            <tbody id="t-his"></tbody></table></div>
+          <p id="v-his" class="vacio hidden">Esta paciente todavía no tiene sesiones. Abre su monitor y pulsa “Iniciar sesión”.</p>
+        </div>
+        <div id="his-det" class="hidden">
+          <h3 id="his-det-t"></h3>
+          <div class="papel"><div class="lectura"><span>Doppler fetal (FCF)</span></div><canvas id="h-fcf" width="900" height="240"></canvas></div>
+          <div class="papel"><div class="lectura"><span>Tocodinamómetro</span></div><canvas id="h-toco" width="900" height="180"></canvas></div>
+        </div>
+      </section>
       <!-- OPERADOR: guia didactica -->
       <section id="sec-guia" class="hidden">
         <h2>Guía didáctica del tococardiógrafo</h2>
@@ -567,7 +588,8 @@ async function cargarPacs() {
   const ps = await api("/api/pacientes");
   $("t-pacs").innerHTML = ps.map(p => `<tr><td>${p.id_paciente}</td><td>${esc(p.nombre)} ${esc(p.apellido)}</td><td>${esc(p.carnet_identidad)}</td>
     <td>${p.edad}</td><td>${p.mes_gestacion}</td><td>${esc(p.celular)}</td>
-    <td><button class="btn sm" onclick='abrirMonitor(${p.id_paciente}, ${JSON.stringify(p.nombre + " " + p.apellido)})'>Abrir monitor</button></td></tr>`).join("");
+    <td><button class="btn sm" onclick='abrirMonitor(${p.id_paciente}, ${JSON.stringify(p.nombre + " " + p.apellido)})'>Abrir monitor</button>
+    <button class="btn sm sec" onclick='verHistorial(${p.id_paciente}, ${JSON.stringify(p.nombre + " " + p.apellido)})'>Historial</button></td></tr>`).join("");
   $("v-pacs").classList.toggle("hidden", ps.length > 0);
 }
 function abrirNueva() {
@@ -591,8 +613,8 @@ async function registrarPaciente(e) {
 }
 
 /* ---------- monitor (Doppler fetal + tocodinamometro) ---------- */
-function dibujar(canvas, vals, min, max, color, zona, suave) {
-  const c = canvas.getContext("2d"), w = canvas.width, h = canvas.height, N = 80;
+function dibujar(canvas, vals, min, max, color, zona, suave, completo) {
+  const c = canvas.getContext("2d"), w = canvas.width, h = canvas.height, N = completo ? Math.max(vals.length, 2) : 80;
   vals = vals.slice(-N);
   const y = v => h - (Math.min(Math.max(v, min), max) - min) / (max - min) * h;
   c.clearRect(0, 0, w, h);
@@ -633,6 +655,7 @@ function dibujar(canvas, vals, min, max, color, zona, suave) {
 }
 function abrirMonitor(pid, nombre) {
   mostrar("sec-monitor");
+  MON.pid = pid; MON.activa = false;
   $("mon-titulo").textContent = nombre; $("sim").checked = false;
   $("v-fcf").textContent = "--"; $("v-toco").textContent = "--"; $("e-fcf").textContent = "";
   const refrescar = async () => {
@@ -640,6 +663,7 @@ function abrirMonitor(pid, nombre) {
       const d = await api(`/api/pacientes/${pid}/datos`);
       const f = d.doppler.map(x => x.v), t = d.toco.map(x => x.v);
       dibujar($("c-fcf"), f, 30, 240, "#D9480F", [110, 160]); dibujar($("c-toco"), t, 0, 100, "#1C5FA8", null, true);
+      MON.activa = !!d.sesion; pintarSesion(d.sesion);
       if (f.length) {
         const v = f[f.length - 1], ok = v >= 110 && v <= 160;
         $("v-fcf").textContent = v; $("e-fcf").textContent = ok ? "Normal" : (v < 110 ? "Bradicardia" : "Taquicardia");
@@ -659,10 +683,60 @@ function abrirMonitor(pid, nombre) {
     if (ocupado) return;
     ocupado = true;
     try {
-      if ($("sim").checked) { try { await api(`/api/pacientes/${pid}/simular`, "POST"); } catch {} }
+      if ($("sim").checked && MON.activa) { try { await api(`/api/pacientes/${pid}/simular`, "POST"); } catch {} }
       await refrescar();
     } finally { ocupado = false; }
   }, 500);
+}
+
+
+/* ---------- sesiones de monitoreo ---------- */
+const MON = {pid: null, activa: false};
+
+function pintarSesion(s) {
+  $("ses-estado").textContent = s ? "🔴 Sesión en curso desde " + fecha(s.inicio) : "Sin sesión activa";
+  $("ses-ini").classList.toggle("hidden", !!s);
+  $("ses-fin").classList.toggle("hidden", !s);
+}
+async function iniciarSesion() {
+  try { await api(`/api/pacientes/${MON.pid}/sesiones`, "POST"); } catch (err) { alert(err.message); }
+}
+async function finalizarSesion() {
+  const notas = prompt("Notas de la sesión (opcional):", "");
+  if (notas === null) return;
+  try {
+    await api(`/api/pacientes/${MON.pid}/sesiones/finalizar`, "POST", {notas});
+    alert("Sesión guardada. La verás en el Historial de la paciente.");
+  } catch (err) { alert(err.message); }
+}
+
+const duracion = (a, b) => {
+  if (!b) return "En curso";
+  const s = Math.round((new Date(b) - new Date(a)) / 1000);
+  return s < 60 ? s + " s" : Math.round(s / 60) + " min";
+};
+async function verHistorial(pid, nombre) {
+  mostrar("sec-historial");
+  $("his-titulo").textContent = "Sesiones de " + nombre;
+  $("his-det").classList.add("hidden");
+  try {
+    const ss = await api(`/api/pacientes/${pid}/sesiones`);
+    $("t-his").innerHTML = ss.map((s, i) => `<tr><td>${ss.length - i}</td><td>${fecha(s.inicio)}</td><td>${duracion(s.inicio, s.fin)}</td>
+      <td>${s.fcf_prom != null ? Math.round(s.fcf_prom) + " lpm" : "—"}</td>
+      <td>${s.fcf_min != null ? s.fcf_min + " – " + s.fcf_max : "—"}</td><td>${esc(s.notas) || "—"}</td>
+      <td><button class="btn sm" onclick="verSesion(${pid}, ${s.id_sesion}, ${ss.length - i})">Ver trazado</button></td></tr>`).join("");
+    $("v-his").classList.toggle("hidden", ss.length > 0);
+  } catch (err) { alert(err.message); }
+}
+async function verSesion(pid, sid, num) {
+  try {
+    const d = await api(`/api/pacientes/${pid}/sesiones/${sid}/datos`);
+    $("his-det").classList.remove("hidden");
+    $("his-det-t").textContent = "Sesión " + num;
+    dibujar($("h-fcf"), d.doppler.map(x => x.v), 30, 240, "#D9480F", [110, 160], false, true);
+    dibujar($("h-toco"), d.toco.map(x => x.v), 0, 100, "#1C5FA8", null, true, true);
+    $("his-det").scrollIntoView({behavior: "smooth"});
+  } catch (err) { alert(err.message); }
 }
 /* ---------- guia didactica ---------- */
 const QUIZ = [
