@@ -652,12 +652,16 @@ function abrirMonitor(pid, nombre) {
     } catch {}
   };
   refrescar();
+  let ocupado = false;
   timer = setInterval(async () => {
-    if ($("sim").checked) { try { await api(`/api/pacientes/${pid}/simular`, "POST"); } catch {} }
-    refrescar();
-  }, 1000);
+    if (ocupado) return;
+    ocupado = true;
+    try {
+      if ($("sim").checked) { try { await api(`/api/pacientes/${pid}/simular`, "POST"); } catch {} }
+      await refrescar();
+    } finally { ocupado = false; }
+  }, 500);
 }
-
 /* ---------- guia didactica ---------- */
 const QUIZ = [
   {p: "¿Dónde se coloca el transductor Doppler?", o: ["Sobre el fondo uterino", "Sobre la espalda fetal, cerca de la cabeza", "Siempre sobre el ombligo", "Junto al pubis"], c: 1,
