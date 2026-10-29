@@ -317,13 +317,21 @@ def mis_pacientes(token: str = Query(...)):
         return rows
 
 
+def sesion_abierta(cur, pid):
+    """Devuelve el id de la sesión abierta de la paciente (o None)."""
+    cur.execute("""SELECT id_sesion FROM sesion_monitoreo
+                   WHERE id_paciente=%s AND fin IS NULL ORDER BY inicio DESC LIMIT 1""", (pid,))
+    r = cur.fetchone()
+    return r["id_sesion"] if r else None
+
+
 def guardar_lectura(cur, pid, fcf, toco):
+    sid = sesion_abierta(cur, pid)
     if fcf is not None:
-        cur.execute("INSERT INTO lectura_doppler (id_paciente, fcf) VALUES (%s,%s)", (pid, fcf))
+        cur.execute("INSERT INTO lectura_doppler (id_paciente, fcf, id_sesion) VALUES (%s,%s,%s)", (pid, fcf, sid))
     if toco is not None:
-        cur.execute("INSERT INTO lectura_tocodinamometro (id_paciente, presion) VALUES (%s,%s)", (pid, toco))
-
-
+        cur.execute("INSERT INTO lectura_tocodinamometro (id_paciente, presion, id_sesion) VALUES (%s,%s,%s)", (pid, toco, sid))
+        
 @app.get("/api/pacientes/{pid}/datos")
 def datos_paciente(pid: int, token: str = Query(...)):
     with tx() as cur:
@@ -331,12 +339,22 @@ def datos_paciente(pid: int, token: str = Query(...)):
         mi_paciente(cur, u, pid)
         ACTIVA["id"] = pid
         ACTIVA["t"] = time.time()
-        cur.execute("SELECT fcf AS v, fecha FROM lectura_doppler WHERE id_paciente=%s ORDER BY fecha DESC LIMIT 120", (pid,))
-        d = cur.fetchall()
-        cur.execute("SELECT presion AS v, fecha FROM lectura_tocodinamometro WHERE id_paciente=%s ORDER BY fecha DESC LIMIT 120", (pid,))
-        t = cur.fetchall()
+        sid = sesion_abierta(cur, pid)
+        sesion = None
+        if sid:
+            cur.execute("SELECT id_sesion, inicio FROM sesion_monitoreo WHERE id_sesion=%s", (sid,))
+            sesion = cur.fetchone()
+            cur.execute("SELECT fcf AS v, fecha FROM lectura_doppler WHERE id_sesion=%s ORDER BY fecha DESC LIMIT 120", (sid,))
+            d = cur.fetchall()
+            cur.execute("SELECT presion AS v, fecha FROM lectura_tocodinamometro WHERE id_sesion=%s ORDER BY fecha DESC LIMIT 120", (sid,))
+            t = cur.fetchall()
+        else:
+            cur.execute("SELECT fcf AS v, fecha FROM lectura_doppler WHERE id_paciente=%s ORDER BY fecha DESC LIMIT 120", (pid,))
+            d = cur.fetchall()
+            cur.execute("SELECT presion AS v, fecha FROM lectura_tocodinamometro WHERE id_paciente=%s ORDER BY fecha DESC LIMIT 120", (pid,))
+            t = cur.fetchall()
     fmt = lambda rows: [{"v": float(r["v"]), "h": r["fecha"].strftime("%H:%M:%S")} for r in reversed(rows)]
-    return {"doppler": fmt(d), "toco": fmt(t)}
+    return {"doppler": fmt(d), "toco": fmt(t), "sesion": sesion}
 
 
 @app.post("/api/pacientes/{pid}/simular")
@@ -370,7 +388,64 @@ def recibir_lectura(d: Lectura, x_api_key: Optional[str] = Header(None)):
         guardar_lectura(cur, pid, d.fcf, d.toco)
     return {"status": "ok"}
 
+# ------------------------------------------------------------------ SESIONES DE MONITOREO
+class FinSesion(BaseModel):
+    notas: Optional[str] = ""
 
+
+@app.post("/api/pacientes/{pid}/sesiones")
+def iniciar_sesion(pid: int, token: str = Query(...)):
+    with tx() as cur:
+        u = auth(cur, token, "operador")
+        mi_paciente(cur, u, pid)
+        sid = sesion_abierta(cur, pid)
+        if not sid:
+            cur.execute("INSERT INTO sesion_monitoreo (id_paciente) VALUES (%s) RETURNING id_sesion", (pid,))
+            sid = cur.fetchone()["id_sesion"]
+    return {"id_sesion": sid}
+
+
+@app.post("/api/pacientes/{pid}/sesiones/finalizar")
+def finalizar_sesion(pid: int, d: FinSesion, token: str = Query(...)):
+    with tx() as cur:
+        u = auth(cur, token, "operador")
+        mi_paciente(cur, u, pid)
+        cur.execute("""UPDATE sesion_monitoreo SET fin=CURRENT_TIMESTAMP, notas=%s
+                       WHERE id_paciente=%s AND fin IS NULL RETURNING 1""",
+                    ((d.notas or "").strip() or None, pid))
+        if not cur.fetchone():
+            raise HTTPException(404, "No hay una sesión abierta.")
+    return {"status": "ok"}
+
+
+@app.get("/api/pacientes/{pid}/sesiones")
+def listar_sesiones(pid: int, token: str = Query(...)):
+    with tx() as cur:
+        u = auth(cur, token, "operador")
+        mi_paciente(cur, u, pid)
+        cur.execute("""SELECT s.id_sesion, s.inicio, s.fin, s.notas,
+                 (SELECT COUNT(*) FROM lectura_doppler d WHERE d.id_sesion = s.id_sesion) AS n_lecturas,
+                 (SELECT AVG(fcf)::float FROM lectura_doppler d WHERE d.id_sesion = s.id_sesion) AS fcf_prom,
+                 (SELECT MIN(fcf) FROM lectura_doppler d WHERE d.id_sesion = s.id_sesion) AS fcf_min,
+                 (SELECT MAX(fcf) FROM lectura_doppler d WHERE d.id_sesion = s.id_sesion) AS fcf_max
+               FROM sesion_monitoreo s WHERE s.id_paciente=%s ORDER BY s.inicio DESC""", (pid,))
+        return cur.fetchall()
+
+
+@app.get("/api/pacientes/{pid}/sesiones/{sid}/datos")
+def datos_sesion(pid: int, sid: int, token: str = Query(...)):
+    with tx() as cur:
+        u = auth(cur, token, "operador")
+        mi_paciente(cur, u, pid)
+        cur.execute("SELECT 1 FROM sesion_monitoreo WHERE id_sesion=%s AND id_paciente=%s", (sid, pid))
+        if not cur.fetchone():
+            raise HTTPException(404, "Sesión no encontrada.")
+        cur.execute("SELECT fcf AS v, fecha FROM lectura_doppler WHERE id_sesion=%s ORDER BY fecha LIMIT 1500", (sid,))
+        d = cur.fetchall()
+        cur.execute("SELECT presion AS v, fecha FROM lectura_tocodinamometro WHERE id_sesion=%s ORDER BY fecha LIMIT 1500", (sid,))
+        t = cur.fetchall()
+    fmt = lambda rows: [{"v": float(r["v"]), "h": r["fecha"].strftime("%H:%M:%S")} for r in rows]
+    return {"doppler": fmt(d), "toco": fmt(t)}
 # ------------------------------------------------------------------ SERVICIO TECNICO
 SENSORES = (("Doppler fetal", "lectura_doppler", "fcf", 30, 240),
             ("Tocodinamometro", "lectura_tocodinamometro", "presion", 0, 100))
