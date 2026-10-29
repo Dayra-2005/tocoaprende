@@ -17,22 +17,23 @@ h2{font-size:1.3rem;margin-bottom:14px;display:flex;align-items:center;gap:10px}
 h2::before{content:"";width:6px;height:22px;border-radius:3px;background:var(--sol);flex:none}
 h3{font-size:1rem;margin-bottom:8px}
 input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-/* ---------- acceso: pantalla dividida ---------- */
-.auth-overlay{position:fixed;inset:0;display:grid;grid-template-columns:1.05fr 1fr;background:#fff;z-index:1000;overflow:auto}
-.auth-hero{background:linear-gradient(155deg,#0B2B3A 0%,#0E5560 100%);color:#fff;padding:56px 52px;display:flex;flex-direction:column;justify-content:center;gap:22px}
-.auth-hero .logo{width:54px;height:54px}
-.auth-hero h1{color:#fff;font-size:2.4rem;line-height:1.1}
-.auth-hero>p{color:#C9E3E7;max-width:430px}
-.auth-hero ul{list-style:none;display:grid;gap:14px;margin-top:6px;max-width:440px}
-.auth-hero li{display:flex;gap:12px;color:#E6F3F5}
-.auth-hero li span{flex:none;width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,.14);display:grid;place-items:center;font-weight:800;color:var(--sol)}
-.auth-panel{display:flex;padding:32px;background:var(--bg)}
-.auth-box{margin:auto;width:100%;max-width:430px;background:#fff;border:1px solid var(--border);border-radius:14px;padding:30px;box-shadow:0 8px 28px rgba(11,43,58,.08)}
-.auth-box h2{font-size:1.6rem;margin-bottom:4px}.auth-box h2::before{display:none}
-.auth-box>p{color:var(--muted);font-size:.92rem;margin-bottom:20px}
-.auth-box .tabs{display:flex;border-bottom:2px solid var(--border);margin-bottom:22px}
-.auth-box .tab{flex:1;padding:12px;background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-2px;border-radius:0;font:700 .9rem 'Nunito Sans',sans-serif;color:var(--muted);cursor:pointer}
-.auth-box .tab.active{color:var(--primary);border-bottom-color:var(--primary)}
+/* ---------- acceso: papel de registro ---------- */
+.auth-overlay{position:fixed;inset:0;z-index:1000;overflow:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;
+  background:
+    linear-gradient(#E9D3AC 1px,transparent 1px) 0 0/100% 100px,
+    linear-gradient(90deg,#E9D3AC 1px,transparent 1px) 0 0/100px 100%,
+    linear-gradient(#F3DFC0 1px,transparent 1px) 0 0/100% 20px,
+    linear-gradient(90deg,#F3DFC0 1px,transparent 1px) 0 0/20px 100%,
+    #FFFCF5}
+.auth-ecg{position:absolute;left:0;right:0;bottom:8%;width:100%;height:120px;pointer-events:none}
+.auth-box{position:relative;width:100%;max-width:400px;background:#fff;border:1px solid var(--border);border-top:5px solid var(--sol);border-radius:12px;padding:28px 30px 26px;box-shadow:0 10px 30px rgba(11,43,58,.12)}
+.auth-marca{display:flex;align-items:center;gap:10px;margin-bottom:22px}
+.auth-marca svg{width:34px;height:34px;flex:none}
+.auth-marca b{font:700 1.15rem 'Sora',sans-serif;color:var(--ink);line-height:1.1;display:block}
+.auth-marca small{font-size:.72rem;color:var(--muted)}
+.auth-box h2{font-size:1.25rem;margin-bottom:2px}.auth-box h2::before{display:none}
+.auth-box>p{color:var(--muted);font-size:.88rem;margin-bottom:18px}
+.auth-pie{position:relative;margin-top:16px;font-size:.76rem;color:#8A7A5C;text-align:center;max-width:400px}
 /* ---------- formularios y botones ---------- */
 .form-group{margin-bottom:14px}
 .form-group label{display:block;font-size:.76rem;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--ink);margin-bottom:5px}
@@ -109,7 +110,7 @@ tbody tr:hover{background:#F8FBFB}td .btn{margin-right:4px}
 .paso-caja{background:var(--soft);border-radius:10px;padding:12px 16px;min-height:100px}.paso-caja b{color:var(--primary)}
 .s-ok{filter:drop-shadow(0 0 5px #2E7D4F)}.s-mal{filter:drop-shadow(0 0 5px #C93C3C)}
 .msg p{margin:7px 0;font-size:.92rem}
-@media(max-width:860px){.auth-overlay{grid-template-columns:1fr}.auth-hero{padding:28px 24px}.auth-hero h1{font-size:1.8rem}.auth-hero ul{display:none}.auth-panel{padding:16px}
+@media(max-width:860px){.auth-box{padding:22px 20px}
 .topbar{flex-wrap:wrap;height:auto;padding:10px 16px;gap:8px}.nav{order:3;flex-basis:100%;height:44px}.user span{display:none}.guia-grid{grid-template-columns:1fr}.cols{grid-template-columns:1fr}main{padding:18px 14px 50px}}
 </style>
 </head>
@@ -117,19 +118,20 @@ tbody tr:hover{background:#F8FBFB}td .btn{margin-right:4px}
 
 <!-- ============ ACCESO ============ -->
 <div id="auth" class="auth-overlay hidden">
-  <div class="auth-hero">
-    <svg class="logo" viewBox="0 0 36 36" aria-hidden="true"><rect width="36" height="36" rx="10" fill="#F2A93B"/><path d="M5 19h6l3-8 5 16 4-12 2 4h6" fill="none" stroke="#0B2B3A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <h1>TocoAprende</h1>
-    <p>Plataforma para que estudiantes de medicina aprendan a colocar los sensores del tococardiógrafo y a leer un registro.</p>
-    <ul>
-      <li><span>1</span>Guía paso a paso para colocar el Doppler fetal y el tocodinamómetro</li>
-      <li><span>2</span>Ejercicios interactivos con retroalimentación inmediata</li>
-      <li><span>3</span>Monitor con la frecuencia cardiaca fetal y las contracciones</li>
-    </ul>
-  </div>
-  <div class="auth-panel">
+  <svg class="auth-ecg" viewBox="0 0 1200 120" preserveAspectRatio="none" aria-hidden="true">
+    <defs><pattern id="ecg" width="300" height="120" patternUnits="userSpaceOnUse">
+      <path d="M0 70H80l8-6 8 6H120l8 6 8-48 8 62 8-20H190q14-16 30 0H300" fill="none" stroke="#D9480F" stroke-width="2" stroke-linejoin="round" opacity=".45"/>
+    </pattern></defs>
+    <rect width="1200" height="120" fill="url(#ecg)"/>
+  </svg>
+
   <div class="auth-box">
-    <h2 id="auth-title">Bienvenido</h2>
+    <div class="auth-marca">
+      <svg viewBox="0 0 36 36" aria-hidden="true"><rect width="36" height="36" rx="10" fill="#F2A93B"/><path d="M5 19h6l3-8 5 16 4-12 2 4h6" fill="none" stroke="#0B2B3A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div><b>TocoAprende</b><small>Práctica de tococardiografía</small></div>
+    </div>
+
+    <h2 id="auth-title">Iniciar sesión</h2>
     <p id="auth-sub">Ingresa tus credenciales para continuar</p>
 
     <!-- YA TENGO CUENTA -->
@@ -141,7 +143,6 @@ tbody tr:hover{background:#F8FBFB}td .btn{margin-right:4px}
       <button class="btn full">Ingresar al sistema</button>
     </form>
 
-    <!-- CREAR CUENTA NUEVA -->
     <!-- PRIMER ADMINISTRADOR (solo aparece si no existe ninguno) -->
     <form id="form-first" class="hidden" onsubmit="crearPrimerAdmin(event)">
       <div class="cols">
@@ -160,9 +161,10 @@ tbody tr:hover{background:#F8FBFB}td .btn{margin-right:4px}
       <button class="btn full">Crear administrador principal</button>
     </form>
   </div>
-  </div>
-</div>
 
+  <p class="auth-pie">Material de estudio para estudiantes de medicina</p>
+</div>
+  
 <!-- ============ APLICACION ============ -->
 <div id="app" class="hidden">
   <header class="topbar">
